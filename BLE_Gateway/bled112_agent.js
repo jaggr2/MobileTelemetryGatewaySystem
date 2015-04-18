@@ -2,8 +2,12 @@ var S = require('string'),
     mqtt = require('mqtt'),
     mqttrouter = require('mqtt-router'),
     bg = require('bglib'),
-    bgCommand = require('./bgCommand'),
-    commandQueue = require('./commandQueue').commandQueue;
+    libCommandQueue = require('commandqueue'),
+    bgCommand = libCommandQueue.bluegigaCommand,
+    commandQueue = libCommandQueue.commandQueue;
+
+console.log(libCommandQueue);
+
 require('buffertools').extend();
 
 var bglib = new bg();

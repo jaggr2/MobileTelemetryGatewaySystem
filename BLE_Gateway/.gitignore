@@ -1,3 +1,4 @@
 # Created by .gitignore support plugin (hsz.mobi)
 docs
-node_modules
+node_msodules
+.idea
