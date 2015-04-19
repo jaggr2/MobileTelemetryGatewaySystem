@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
-//#include "txw51_framework/hw/lsm330.h"
+#include "txw51_framework/hw/tmp006.h"
 #include "txw51_framework/utils/log.h"
 
 #include "app/appl.h"
@@ -65,6 +65,7 @@ uint32_t APPL_CONTACTLESS_TEMP_InitService(struct TXW51_SERV_TEMP_CONTACTLESS_Ha
     if (err != ERR_NONE) {
         return ERR_BLE_SERVICE_INIT_FAILED;
     }
+
     return ERR_NONE;
 }
 
@@ -102,8 +103,9 @@ static void CONTACTLESS_TEMP_BleEventHandler(struct TXW51_SERV_TEMP_CONTACTLESS_
  ******************************************************************************/
 static void CONTACTLESS_TEMP_GetTemperature(uint8_t *value)
 {
-    //TXW51_TEMP_CONTACTLESS_GetTemperature(value);
+    TXW51_LSM330_GetTemperature(value);
 
+    TXW51_TMP006_GetTemperature(value);
     /* Convert sensor value to real temperature. */
     //*value = TXW51_CONTACTLESS_TEMP_TEMP_REF - *value;
 
