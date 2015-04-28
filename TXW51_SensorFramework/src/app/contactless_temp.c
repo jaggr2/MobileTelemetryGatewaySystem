@@ -33,8 +33,8 @@
 /*----- Function prototypes --------------------------------------------------*/
 static void CONTACTLESS_TEMP_BleEventHandler(struct TXW51_SERV_TEMP_CONTACTLESS_Handle *handle,
                                    struct TXW51_SERV_TEMP_CONTACTLESS_Event *evt);
-static void CONTACTLESS_TEMP_GetTemperature(uint8_t *value);
 
+static void CONTACTLESS_TEMP_GetTemperature(uint8_t *value);
 /*----- Data -----------------------------------------------------------------*/
 
 /*----- Implementation -------------------------------------------------------*/
@@ -103,11 +103,8 @@ static void CONTACTLESS_TEMP_BleEventHandler(struct TXW51_SERV_TEMP_CONTACTLESS_
  ******************************************************************************/
 static void CONTACTLESS_TEMP_GetTemperature(uint8_t *value)
 {
-    TXW51_LSM330_GetTemperature(value);
-
     TXW51_TMP006_GetTemperature(value);
     /* Convert sensor value to real temperature. */
-    //*value = TXW51_CONTACTLESS_TEMP_TEMP_REF - *value;
 
     TXW51_LOG_DEBUG("[CONTACTLESS_TEMP Sensor] Temperature read.");
 }
