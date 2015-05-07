@@ -93,6 +93,7 @@ static void APPL_BleEventHandler(ble_evt_t *bleEvent)
     TXW51_SERV_DIS_OnBleEvent(&serviceHandleDis, bleEvent);
     TXW51_SERV_LSM330_OnBleEvent(&serviceHandleLsm330, bleEvent);
     TXW51_SERV_MEASURE_OnBleEvent(&serviceHandleMeasure, bleEvent);
+    TXW51_SERV_TEMP_CONTACTLESS_OnBleEvent(&serviceHandleContactlessTemp, bleEvent);
 
     /* Local BLE event handling. */
     switch (bleEvent->header.evt_id) {

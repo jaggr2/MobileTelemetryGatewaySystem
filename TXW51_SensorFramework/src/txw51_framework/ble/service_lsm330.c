@@ -84,6 +84,7 @@ void TXW51_SERV_LSM330_OnBleEvent(struct TXW51_SERV_LSM330_Handle *handle,
 {
     TXW51_SERV_OnBleEvent(&handle->ServiceHandle, bleEvent);
 
+
     switch (bleEvent->header.evt_id) {
         case BLE_GAP_EVT_CONNECTED:
             SERV_LSM330_OnConnect(handle, bleEvent);

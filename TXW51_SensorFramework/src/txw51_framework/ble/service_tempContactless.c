@@ -83,6 +83,7 @@ void TXW51_SERV_TEMP_CONTACTLESS_OnBleEvent(struct TXW51_SERV_TEMP_CONTACTLESS_H
 {
     TXW51_SERV_OnBleEvent(&handle->ServiceHandle, bleEvent);
 
+
     switch (bleEvent->header.evt_id) {
         case BLE_GAP_EVT_CONNECTED:
             SERV_TEMP_CONTACTLESS_OnConnect(handle, bleEvent);
@@ -202,6 +203,8 @@ void SERV_TEMP_CONTACTLESS_OnRwAuthRequest(struct TXW51_SERV_TEMP_CONTACTLESS_Ha
                                  ble_evt_t *bleEvent)
 {
     ble_gatts_evt_rw_authorize_request_t *authRequest = &bleEvent->evt.gatts_evt.params.authorize_request;
+
+    TXW51_LOG_DEBUG("SERV_TEMP_CONTACTLESS_OnRwAuthRequest");
 
     if (handle->EventHandler != NULL) {
         struct TXW51_SERV_TEMP_CONTACTLESS_Event evt;

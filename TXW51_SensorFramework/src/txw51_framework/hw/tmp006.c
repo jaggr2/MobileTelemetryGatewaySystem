@@ -24,37 +24,35 @@
 
 uint32_t TXW51_TMP006_GetTemperature(uint8_t *value)
 {
+
+    TXW51_LOG_DEBUG("TXW51_TMP006_GetTemperature: Start");
+
     //uint32_t err;
     uint8_t address = TMP006_I2CADDR;
     uint8_t len = 1;
     uint8_t reg = 0x00; //Voltage Value
 
-    //err = twi_master_transfer((uint8_t)((TMP006_I2CADDR << 1) & 0x01) , values, 2, false);
-    //if (!err){
-    //if (err != ERR_NONE) {
-        //TXW51_LOG_WARNING("[TMP006] Could not read temperature.");
-        //return err;
-    //}
+    *value = 0;
 
-    // initialize values to zero so we don't return random values.
-	//for (int i = 0; i < len; i++)
-	//{
-		//values[i] = 0;
-	//}
-    value=0;
+    twi_master_init();
 
 	// Write: register address we want to start reading from
-	if (twi_master_transfer(address, &reg, 1, TWI_DONT_ISSUE_STOP))
+	if (twi_master_transfer((address << 1), &reg, 1, TWI_DONT_ISSUE_STOP))
 	{
+
 		// Read: the number of bytes requested.
-		if (twi_master_transfer(address | TWI_READ_BIT, value, len, TWI_ISSUE_STOP))
+		if (twi_master_transfer((address << 1) | TWI_READ_BIT, value, len, TWI_DONT_ISSUE_STOP))
 		{
 		  // Read succeeded.
+
+				TXW51_LOG_DEBUG("TXW51_TMP006_GetTemperature: Success");
 				return ERR_NONE;
 		}
 	}
 
 	// read or write failed.
+
+	TXW51_LOG_WARNING("[TMP006] Could not read temperature.");
 	return false;
 
     //return ERR_NONE;
