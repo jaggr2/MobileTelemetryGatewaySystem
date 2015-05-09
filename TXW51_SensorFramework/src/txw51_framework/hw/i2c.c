@@ -50,6 +50,9 @@ uint32_t TXW51_I2C_Init()
 
     /* Configure I2C master. */
     twi_master_init();
+
+    TXW51_LOG_DEBUG("TXW51_I2C_INIT");
+
     return ERR_NONE;
 }
 
@@ -57,6 +60,7 @@ uint32_t TXW51_I2C_Init()
 void TXW51_I2C_Deinit()
 {
 
+    TXW51_LOG_DEBUG("TXW51_I2C_DEINIT");
 }
 
 
@@ -73,10 +77,10 @@ uint32_t TXW51_I2C_Read(uint8_t addr,
 	}
 
 	// Write: register address we want to start reading from
-	if (twi_master_transfer(addr, &reg, 1, TWI_DONT_ISSUE_STOP))
+	if (twi_master_transfer((addr << 1), &reg, 1, TWI_DONT_ISSUE_STOP))
 	{
 		// Read: the number of bytes requested.
-		if (twi_master_transfer(addr | TWI_READ_BIT, values, len, TWI_ISSUE_STOP))
+		if (twi_master_transfer((addr << 1) | TWI_READ_BIT, values, len, TWI_ISSUE_STOP))
 		{
 		  // Read succeeded.
 				return ERR_NONE;
