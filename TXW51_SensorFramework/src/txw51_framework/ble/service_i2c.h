@@ -20,7 +20,7 @@
 #include "txw51_framework/ble/service.h"
 
 /*----- Macros ---------------------------------------------------------------*/
-
+#define TXW51_SERV_I2C_VALUE_MAX_LENGTH     ( 10 )      /**< Maximum length of a device I2C Value */
 /*----- Data types -----------------------------------------------------------*/
 /**
  * @brief The different event types that the service signals to the application.
@@ -30,7 +30,8 @@ enum TXW51_SERV_I2C_EventType {
     TXW51_SERV_I2C_EVT_ADRESS,   				/**< Set the address of the I2C device */
     TXW51_SERV_I2C_EVT_REGISTER,				/**< Set the register of the I2C device to write/read */
     TXW51_SERV_I2C_EVT_VALUE_READ,				/**< Read the value from specified I2C device */
-    TXW51_SERV_I2C_EVT_VALUE_WRITE				/**< Write the value to specified I2C device */
+    TXW51_SERV_I2C_EVT_VALUE_WRITE,				/**< Write the value to specified I2C device */
+    TXW51_SERV_I2C_EVT_VALUE_LENGTH				/**< Number of Bytes for the value to read */
 
 };
 
@@ -53,14 +54,14 @@ struct TXW51_SERV_I2C_Handle;
  * @brief Callback that gets called when the service wants to signal something
  * to the application.
  */
-typedef void (*TXW51_I2C_EventHandler_t) (struct TXW51_SERV_I2C_Handle *handle,
+typedef void (*TXW51_SERV_I2C_EventHandler_t) (struct TXW51_SERV_I2C_Handle *handle,
 		                                          struct TXW51_SERV_I2C_Event  *event);
 
 /**
  * @brief Structure with the initialization values.
  */
 struct TXW51_SERV_I2C_Init {
-    TXW51_SERV_TEMP_CONTACTLESS_EventHandler_t EventHandler;  /**< Callback to register. */
+    TXW51_SERV_I2C_EventHandler_t EventHandler;  /**< Callback to register. */
 };
 
 /**
@@ -71,6 +72,7 @@ struct TXW51_SERV_I2C_Handle {
     ble_gatts_char_handles_t    CharHandle_I2CValue;	      	/**< Handle of the I2C characteristic. */
     ble_gatts_char_handles_t    CharHandle_I2CAddress;	      	/**< Handle of the I2C characteristic. */
     ble_gatts_char_handles_t    CharHandle_I2CRegister;	      	/**< Handle of the I2C characteristic. */
+    ble_gatts_char_handles_t    CharHandle_I2CLength;	      	/**< Handle of the I2C characteristic. */
     TXW51_SERV_I2C_EventHandler_t EventHandler;    				/**< Callback to the application. */
 };
 

@@ -101,13 +101,15 @@
 /* Definitions for the I2C Service.
  ******************************************************************************/
 #define SERVICE_I2C_UUID_SERVICE         	  	( 0x0500 )  /**< UUID address of the Measurement service. */
-#define SERVICE_I2C_UUID_CHAR_REGISTER_VALUE  	( 0x0501 )  /**< UUID address of the I2C Value characteristic. */
-#define SERVICE_I2C_UUID_CHAR_ADDRESS			( 0x0502 )  /**< UUID address of the I2C Address characteristic. */
-#define SERVICE_I2C_UUID_CHAR_REGISTER			( 0x0503 )  /**< UUID address of the I2C Register characteristic. */
+#define SERVICE_I2C_UUID_CHAR_ADDRESS			( 0x0501 )  /**< UUID address of the I2C Address characteristic. */
+#define SERVICE_I2C_UUID_CHAR_REGISTER			( 0x0502 )  /**< UUID address of the I2C Register characteristic. */
+#define SERVICE_I2C_UUID_CHAR_LENGTH			( 0x0503 )  /**< UUID address of the I2C Register characteristic. */
+#define SERVICE_I2C_UUID_CHAR_REGISTER_VALUE  	( 0x0504 )  /**< UUID address of the I2C Value characteristic. */
 
-#define SERVICE_I2C_STRING_CHAR_REGISTER_VALUE  "Register Value"    /**< User description string for the I2C Register Value characteristic. */
 #define SERVICE_I2C_STRING_CHAR_ADDRESS  		"address"    		/**< User description string for the I2C address characteristic. */
 #define SERVICE_I2C_STRING_CHAR_REGISTER  		"register"    		/**< User description string for the I2C register characteristic. */
+#define SERVICE_I2C_STRING_CHAR_LENGTH  		"length"    		/**< User description string for the I2C register characteristic. */
+#define SERVICE_I2C_STRING_CHAR_REGISTER_VALUE  "Register Value"    /**< User description string for the I2C Register Value characteristic. */
 
 /*----- Data types -----------------------------------------------------------*/
 

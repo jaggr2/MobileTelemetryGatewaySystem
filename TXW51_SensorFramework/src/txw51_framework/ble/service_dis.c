@@ -261,7 +261,6 @@ static uint32_t SERV_DIS_AddAllChars(struct TXW51_SERV_DIS_Handle *serviceHandle
         return err;
     }
 
-    TXW51_LOG_INFO("[DIS Service] Service creation successful.");
     return ERR_NONE;
 }
 

@@ -1,2 +1,4 @@
 *.aux
 *.tex~
+*.log
+BLE_Gateway/node_modules

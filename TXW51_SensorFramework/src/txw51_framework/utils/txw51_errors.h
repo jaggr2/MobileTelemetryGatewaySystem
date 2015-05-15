@@ -43,6 +43,10 @@ enum txw51_errors {
 
     ERR_UART_READ_FAILED,                   /**< Could not read from the UART interface. */
     ERR_UART_WRITE_FAILED,                  /**< Could not write to the UART interface. */
+
+    ERR_I2C_INIT_FAILED,					/**< Could not initialize the I2C interface. */
+    ERR_I2C_READ_FAILED,					/**< Could not read from the I2C interface. */
+    ERR_I2C_WRITE_FAILED,					/**< Could not write to the I2C interface. */
 };
 
 /*----- Function prototypes --------------------------------------------------*/

@@ -31,8 +31,8 @@
 /*----- Data types -----------------------------------------------------------*/
 
 /*----- Function prototypes --------------------------------------------------*/
-static void I2C_BRIDGE_BleEventHandler(struct TXW51_SERV_I2C_BRIDGE_Handle *handle,
-                                   struct TXW51_SERV_I2C_BRIDGE_Event *evt);
+static void APPL_I2C_BRIDGE_BleEventHandler(struct TXW51_SERV_I2C_Handle *handle,
+											struct TXW51_SERV_I2C_Event *evt);
 
 /*----- Data -----------------------------------------------------------------*/
 
@@ -41,17 +41,19 @@ static void I2C_BRIDGE_BleEventHandler(struct TXW51_SERV_I2C_BRIDGE_Handle *hand
 void APPL_I2C_BRIDGE_Init(void)
 {
 	TXW51_I2C_Init();
+
+	i2cLength = 1;
 }
 
 /* -------------------------------------------------------------------------- */
 
 
-uint32_t APPL_I2C_InitService(struct TXW51_SERV_I2C_Handle *serviceHandle)
+uint32_t APPL_I2C_BRIDGE_InitService(struct TXW51_SERV_I2C_Handle *serviceHandle)
 {
     uint32_t err = ERR_NONE;
 
     struct TXW51_SERV_I2C_Init init;
-    init.EventHandler = APPL_I2C_BleEventHandler;
+    init.EventHandler = APPL_I2C_BRIDGE_BleEventHandler;
 
     err = TXW51_SERV_I2C_Init(serviceHandle, &init);
     if (err != ERR_NONE) {
@@ -72,15 +74,15 @@ uint32_t APPL_I2C_InitService(struct TXW51_SERV_I2C_Handle *serviceHandle)
  *
  * @return Nothing.
  ******************************************************************************/
-static void APPL_I2C_BleEventHandler(struct TXW51_SERV_I2C_Handle *handle,
+static void APPL_I2C_BRIDGE_BleEventHandler(struct TXW51_SERV_I2C_Handle *handle,
                                    struct TXW51_SERV_I2C_Event *evt)
 {
-	char debugOut [15];
+	char debugOut [25];
     switch (evt->EventType) {
         case TXW51_SERV_I2C_EVT_ADRESS:
            	i2cAddress = *evt->Value;
-           	sprintf(debugOut, "%d", i2cAddress);
            	TXW51_LOG_DEBUG("I2C Address set to:");
+           	sprintf(debugOut, "%d", i2cAddress);
            	TXW51_LOG_DEBUG(debugOut);
             break;
         case TXW51_SERV_I2C_EVT_REGISTER:
@@ -89,14 +91,22 @@ static void APPL_I2C_BleEventHandler(struct TXW51_SERV_I2C_Handle *handle,
            	TXW51_LOG_DEBUG("I2C Register set to:");
            	TXW51_LOG_DEBUG(debugOut);
             break;
+        case TXW51_SERV_I2C_EVT_VALUE_LENGTH:
+        	i2cLength = *evt->Value;
+           	sprintf(debugOut, "%d", i2cLength);
+           	TXW51_LOG_DEBUG("I2C Length set to:");
+           	TXW51_LOG_DEBUG(debugOut);
+            break;
         case TXW51_SERV_I2C_EVT_VALUE_READ:
-        	TXW51_I2C_Read(i2cAddress, i2cRegister, evt->Value, 1);
-           	TXW51_LOG_DEBUG("");
+        	TXW51_I2C_Read(i2cAddress, i2cRegister, evt->Value, i2cLength);
+        	evt->Length = i2cLength;
+           	sprintf(debugOut, "I2C Read Length %d", evt->Length);
+           	TXW51_LOG_DEBUG(debugOut);
         	break;
         case TXW51_SERV_I2C_EVT_VALUE_WRITE:
-        	TXW51_I2C_Write(i2cAddress, i2cRegister, evt->Value, 1);
-           	TXW51_LOG_DEBUG("");
-        	break;
+        	TXW51_I2C_Write(i2cAddress, i2cRegister, evt->Value, evt->Length);
+           	sprintf(debugOut, " I2C Write Length: %d", evt->Length);
+           	TXW51_LOG_DEBUG(debugOut);
         default:
             break;
     }

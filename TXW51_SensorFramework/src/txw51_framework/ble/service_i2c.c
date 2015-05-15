@@ -43,7 +43,8 @@ static uint32_t SERV_I2C_AddChar(struct TXW51_SERV_I2C_Handle *serviceHandle,
                                     uint8_t charValue,
                                     char *description,
                                     ble_gatts_char_handles_t *charHandle);
-//static uint32_t SERV_I2C_AddChar_TriggerValue(struct TXW51_SERV_I2C_Handle *serviceHanI2C Data -----------------------------------------------------------------*/
+static uint32_t SERV_I2C_AddValueChar(struct TXW51_SERV_I2C_Handle *serviceHandle);
+
 
 /*----- Implementation -------------------------------------------------------*/
 
@@ -71,6 +72,7 @@ uint32_t TXW51_SERV_I2C_Init(struct TXW51_SERV_I2C_Handle *handle,
         return err;
     }
 
+    TXW51_LOG_INFO("[I2C Service] Service creation successful");
     return ERR_NONE;
 }
 
@@ -160,10 +162,25 @@ static void SERV_I2C_OnWrite(struct TXW51_SERV_I2C_Handle *handle,
 	    } else if (evtWrite->handle == handle->CharHandle_I2CRegister.value_handle) {
             evt.EventType = TXW51_SERV_I2C_EVT_REGISTER;
 
+	    } else if (evtWrite->handle == handle->CharHandle_I2CLength.value_handle) {
+            evt.EventType = TXW51_SERV_I2C_EVT_VALUE_LENGTH;
+
 	    }
 
-	    if (evt.EventType != TXW51_SERV_TEMP_CONTACTLESS_EVT_UNKNOWN) {
+	    TXW51_LOG_DEBUG("[I2C Service] On Write");
+
+	    if (evt.EventType != TXW51_SERV_I2C_EVT_UNKNOWN) {
 	        evt.Value = evtWrite->data;
+//	        uint8_t dataBuffer [evtWrite->len];
+	        uint8_t i = 0;
+	        for (i = 0; i < evtWrite->len; i++)
+	        {
+//	        	dataBuffer[i] = evtWrite->data[i];
+	        	char debugBuffer[30];
+	           	sprintf(debugBuffer, "write Byte %d with Value %d", i, evtWrite->data[i]);
+	        	TXW51_LOG_DEBUG(debugBuffer);
+	        }
+//	        evt.Value = dataBuffer;
             evt.Length = evtWrite->len;
             handle->EventHandler(handle, &evt);
 	    }
@@ -186,7 +203,7 @@ void SERV_I2C_OnRwAuthRequest(struct TXW51_SERV_I2C_Handle *handle,
 {
     ble_gatts_evt_rw_authorize_request_t *authRequest = &bleEvent->evt.gatts_evt.params.authorize_request;
 
-    TXW51_LOG_DEBUG("SERV_I2C_OnRwAuthRequest");
+    TXW51_LOG_DEBUG("[I2C Service] SERV_I2C_OnRwAuthRequest");
 
     if (handle->EventHandler != NULL) {
         struct TXW51_SERV_I2C_Event evt;
@@ -196,17 +213,25 @@ void SERV_I2C_OnRwAuthRequest(struct TXW51_SERV_I2C_Handle *handle,
             uint32_t err;
 
             /* Handle event. */
-            uint8_t tempValue = 0;
+            uint8_t tempValue [TXW51_SERV_I2C_VALUE_MAX_LENGTH];
+            uint8_t i;
+            for (i = 0; i < TXW51_SERV_I2C_VALUE_MAX_LENGTH; i++)
+            {
+            	tempValue[i] = 0;
+            }
             evt.EventType = TXW51_SERV_I2C_EVT_VALUE_READ;
-            evt.Value = &tempValue;
+            evt.Value = tempValue;
             handle->EventHandler(handle, &evt);
+
+
+            TXW51_LOG_DEBUG("[I2C Service] I2C Value Read Event");
 
             /* Reply to peer. */
             ble_gatts_rw_authorize_reply_params_t reply;
             reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
             reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
-            reply.params.read.p_data = &tempValue;
-            reply.params.read.len = 1;
+            reply.params.read.p_data = tempValue;
+            reply.params.read.len = evt.Length;
             reply.params.read.update = 1;
             reply.params.read.offset = 0;
 
@@ -227,18 +252,9 @@ void SERV_I2C_OnRwAuthRequest(struct TXW51_SERV_I2C_Handle *handle,
 *         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
 *                                            added.
 ******************************************************************************/
-static uint32_t SERV_TEMP_CONTACTLESS_AddAllChars(struct TXW51_SERV_I2C_Handle *serviceHandle)
+static uint32_t SERV_I2C_AddAllChars(struct TXW51_SERV_I2C_Handle *serviceHandle)
 {
     uint32_t err;
-
-    err = SERV_I2C_AddChar(serviceHandle,
-                              SERVICE_I2C_UUID_CHAR_REGISTER_VALUE,
-                              0,
-                              SERVICE_I2C_STRING_CHAR_REGISTER_VALUE,
-                              &serviceHandle->CharHandle_I2CRegister);
-    if (err != ERR_NONE) {
-        return err;
-    }
 
     err = SERV_I2C_AddChar(serviceHandle,
                               SERVICE_I2C_UUID_CHAR_ADDRESS,
@@ -257,6 +273,21 @@ static uint32_t SERV_TEMP_CONTACTLESS_AddAllChars(struct TXW51_SERV_I2C_Handle *
 	if (err != ERR_NONE) {
 		return err;
 	}
+
+
+	err = SERV_I2C_AddChar(serviceHandle,
+							  SERVICE_I2C_UUID_CHAR_LENGTH,
+							  1,
+							  SERVICE_I2C_STRING_CHAR_LENGTH,
+							  &serviceHandle->CharHandle_I2CLength);
+	if (err != ERR_NONE) {
+		return err;
+	}
+
+    err = SERV_I2C_AddValueChar(serviceHandle);
+    if (err != ERR_NONE) {
+		return err;
+    }
 
     return ERR_NONE;
 }
@@ -284,7 +315,7 @@ static uint32_t SERV_I2C_AddChar(struct TXW51_SERV_I2C_Handle *serviceHandle,
 
     /* Initialize characteristic. */
     TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
-                        uuid,
+    					uuid,
                         &charInit);
 
     /* Set up characteristic. */
@@ -303,4 +334,47 @@ static uint32_t SERV_I2C_AddChar(struct TXW51_SERV_I2C_Handle *serviceHandle,
     return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
                               &charInit,
                               charHandle);
+}
+
+
+/***************************************************************************//**
+* @brief Adds a characteristic that contains a 1 byte value to the service.
+*
+* @param[in,out] serviceHandle The handle for the service.
+* @param[in]     uuid          The two UUID bytes for the characteristic.
+* @param[in]     charValue     The initial value.
+* @param[in]     description   The user description of the characteristic.
+* @param[out]    charHandle    The handle for the characteristic.
+* @return ERR_NONE if no error occurred.
+*         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
+*                                            added.
+******************************************************************************/
+static uint32_t SERV_I2C_AddValueChar(struct TXW51_SERV_I2C_Handle *serviceHandle)
+{
+    struct TXW51_SERV_CharInit charInit;
+
+    /* Initialize characteristic. */
+    TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
+    					SERVICE_I2C_UUID_CHAR_REGISTER_VALUE,
+                        &charInit);
+
+    /* Set up characteristic. */
+    charInit.Metadata.char_props.read  = 1;
+    charInit.Metadata.char_props.write = 1;
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.write_perm);
+
+    charInit.AttrMetadata.rd_auth = 1;
+
+    /*add_desc_user_description(&charInit, (uint8_t *)SERVICE_I2C_STRING_CHAR_REGISTER_VALUE);*/
+
+    charInit.Attribute.init_len = 1;
+    charInit.Attribute.max_len  = TXW51_SERV_I2C_VALUE_MAX_LENGTH;
+    charInit.Attribute.p_value  = 0;
+    charInit.AttrMetadata.vlen  = 1;
+
+    /* Add characteristic. */
+    return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
+                              &charInit,
+                              &serviceHandle->CharHandle_I2CValue);
 }

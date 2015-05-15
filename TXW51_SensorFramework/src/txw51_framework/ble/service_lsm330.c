@@ -75,6 +75,7 @@ uint32_t TXW51_SERV_LSM330_Init(struct TXW51_SERV_LSM330_Handle *handle,
         return err;
     }
 
+    TXW51_LOG_INFO("[LSM330 Service] Service creation successful");
     return ERR_NONE;
 }
 

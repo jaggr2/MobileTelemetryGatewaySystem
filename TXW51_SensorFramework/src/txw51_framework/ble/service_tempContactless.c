@@ -74,6 +74,7 @@ uint32_t TXW51_SERV_TEMP_CONTACTLESS_Init(struct TXW51_SERV_TEMP_CONTACTLESS_Han
         return err;
     }
 
+    TXW51_LOG_INFO("[TEMP_CONTACTLESS Service] Service creation successful");
     return ERR_NONE;
 }
 
@@ -154,31 +155,6 @@ static void SERV_TEMP_CONTACTLESS_OnWrite(struct TXW51_SERV_TEMP_CONTACTLESS_Han
 	    struct TXW51_SERV_TEMP_CONTACTLESS_Event evt;
 	    evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_UNKNOWN;
 
-//	    if (evtWrite->handle == handle->CharHandle_AccEnable.value_handle) {
-//	        evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_ACC_EN;
-//
-//	    } else if (evtWrite->handle == handle->CharHandle_GyroEnable.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_GYRO_EN;
-//
-//	    } else if (evtWrite->handle == handle->CharHandle_AccFscale.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_ACC_FSCALE;
-//
-//	    } else if (evtWrite->handle == handle->CharHandle_GyroFscale.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_GYRO_FSCALE;
-//
-//		} else if (evtWrite->handle == handle->CharHandle_AccOdr.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_ACC_ODR;
-//
-//        } else if (evtWrite->handle == handle->CharHandle_GyroOdr.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_GYRO_ODR;
-//
-//        } else if (evtWrite->handle == handle->CharHandle_TriggerAxis.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_TRIGGER_AXIS;
-//
-//        } else if (evtWrite->handle == handle->CharHandle_TriggerValue.value_handle) {
-//            evt.EventType = TXW51_SERV_TEMP_CONTACTLESS_EVT_TRIGGER_VAL;
-//
-//        }
 
 	    if (evt.EventType != TXW51_SERV_TEMP_CONTACTLESS_EVT_UNKNOWN) {
 	        evt.Value = evtWrite->data;

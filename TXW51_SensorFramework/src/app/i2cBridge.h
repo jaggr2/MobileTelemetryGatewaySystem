@@ -27,8 +27,26 @@
 
 /*----- Function prototypes --------------------------------------------------*/
 
+/***************************************************************************//**
+ * @brief Initializes the I2C Bus .
+ *
+ * @return Nothing.
+ ******************************************************************************/
+extern void APPL_I2C_BRIDGE_Init(void);
+
+/***************************************************************************//**
+ * @brief Initializes the Bluetooth Smart to I2C service.
+ *
+ * @param[out] serviceHandle The handle for the service.
+ *
+ * @return Nothing.
+ ******************************************************************************/
+extern uint32_t APPL_I2C_BRIDGE_InitService(struct TXW51_SERV_I2C_Handle *serviceHandle);
+
+
 /*----- Data -----------------------------------------------------------------*/
 uint8_t i2cAddress;
 uint8_t i2cRegister;
+uint8_t i2cLength;
 
 #endif /* TXW51_APPLICATION_I2C_BRIDGE_H_ */

@@ -43,9 +43,10 @@ extern void TXW51_I2C_Deinit();
 /***************************************************************************//**
  * @brief Reads from the I2C interface.
  *
- * If multiple registers are read, addr is the starting address and we
+ * If multiple registers are read, reg is the starting address and we
  * increment afterwards.
- * @param[in]  addr        Address of the register.
+ * @param[in] addr        Address of the i2c Device.
+ * @param[in]  reg         Address of the register.
  * @param[out] values      Buffer to save the values.
  * @param[in]  n           How many bytes to read.
  *
@@ -60,14 +61,18 @@ extern uint32_t TXW51_I2C_Read(uint8_t addr,
 /***************************************************************************//**
  * @brief Writes to the I2C interface.
  *
- * @param[in] addr        Address of the register.
- * @param[in] value       Value to write.
+ * @param[in] addr        Address of the i2c Device.
+ * @param[in] reg         Address of the register.
+ * @param[in] values      Buffer to write to the i2c.
+ * @param[in] n          How many bytes to write.
  *
  * @return ERR_NONE if no error occurred.
  *         ERR_SPI_WRITE_FAILED if the values could not be written.
  ******************************************************************************/
-extern uint32_t TXW51_I2C_Write(uint8_t addr,
-                                uint8_t value);
+extern uint32_t TXW51_I2C_Write(	uint8_t addr,
+									uint8_t reg,
+									uint8_t *values,
+									uint32_t len);
 
 /*----- Data -----------------------------------------------------------------*/
 
