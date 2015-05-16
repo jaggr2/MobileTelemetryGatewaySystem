@@ -110,16 +110,21 @@ uint32_t TXW51_I2C_Write(	uint8_t addr,
 		return ERR_I2C_INIT_FAILED;
 	}
 
-	// Write: register address we want to start reading from
-	if (twi_master_transfer((addr << 1), &reg, 1, TWI_DONT_ISSUE_STOP))
+	uint8_t command[len+1];
+	uint8_t i;
+
+	command[0] = reg;
+	for (i=0; i < len; i++)
 	{
-		// Read: the number of bytes requested.
-		if (twi_master_transfer((addr << 1), values, len, TWI_ISSUE_STOP))
-		{
-			TXW51_LOG_DEBUG("[TXW51_I2C Write]: success");
-			// Write succeeded.
-			return ERR_NONE;
-		}
+		command[i+1] = values[i];
+	}
+
+	// Write: register address we want to start reading from
+	if (twi_master_transfer((addr << 1), command, len+1, TWI_DONT_ISSUE_STOP))
+	{
+		TXW51_LOG_DEBUG("[TXW51_I2C Write]: success");
+		// Write succeeded.
+		return ERR_NONE;
 	}
 
 
