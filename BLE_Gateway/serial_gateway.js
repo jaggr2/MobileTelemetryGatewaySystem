@@ -5,7 +5,7 @@ var S = require('string'),
 
 // settings
 var deviceType = "BLED112Serial";
-var sPort = "ttyACM0";
+var sPort = "ttyACM1";
 var serialSettings = {
     baudrate: 115200,
     flowControl: true
