@@ -90,6 +90,8 @@
 #define CONFIG_HW_LED_ON                ( TXW51_GPIO_PIN_LED0 ) /**< LED pin to signal that the device is on. */
 #define CONFIG_HW_LED_ERROR             ( TXW51_GPIO_PIN_LED2 ) /**< LED pin to signal that the device has an error. */
 
+#define TWI_MASTER_CONFIG_CLOCK_PIN_NUMBER (24U)
+#define TWI_MASTER_CONFIG_DATA_PIN_NUMBER (25U)
 
 /******************************************************************************/
 /* Log configuration.

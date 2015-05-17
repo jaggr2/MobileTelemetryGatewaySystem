@@ -1,21 +1,20 @@
 /***************************************************************************//**
- * @brief   Bluetooth Smart "LSM330 Service".
+ * @brief   Bluetooth Smart "I2C BLE Bridge".
  *
- * This service allows the user to configure the LSM330 sensor on the TXW51
- * hardware. This sensor consists of an accelerometer, an gyroscope and a
- * temperature sensor.
+ * This service allows the user to configure and to transmit i2c messages with
+ * the TXW51 sensor.
  *
- * @file    service_lsm330.c
+ * @file    service_i2c.c
  * @version 1.0
- * @date    13.11.2014
- * @author  Daniel Meer
+ * @date    08.05.2015
+ * @author  Pascal Bohni
  *
  * @remark  Last Modifications:
- *          13.11.2014 meerd1 created
+ *          10.04.2015 bohnp1 created
  ******************************************************************************/
 
 /*----- Header-Files ---------------------------------------------------------*/
-#include "service_lsm330.h"
+#include "service_i2c.h"
 
 #include <string.h>
 
@@ -30,29 +29,27 @@
 /*----- Data types -----------------------------------------------------------*/
 
 /*----- Function prototypes --------------------------------------------------*/
-static void SERV_LSM330_OnConnect(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnConnect(struct TXW51_SERV_I2C_Handle *handle,
                                   ble_evt_t *bleEvent);
-static void SERV_LSM330_OnDisconnect(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnDisconnect(struct TXW51_SERV_I2C_Handle *handle,
                                      ble_evt_t *bleEvent);
-static void SERV_LSM330_OnWrite(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnWrite(struct TXW51_SERV_I2C_Handle *handle,
                                 ble_evt_t *bleEvent);
-static void SERV_LSM330_OnRwAuthRequest(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnRwAuthRequest(struct TXW51_SERV_I2C_Handle *handle,
                                         ble_evt_t *bleEvent);
-static uint32_t SERV_LSM330_AddAllChars(struct TXW51_SERV_LSM330_Handle *serviceHandle);
-static uint32_t SERV_LSM330_AddChar(struct TXW51_SERV_LSM330_Handle *serviceHandle,
+static uint32_t SERV_I2C_AddAllChars(struct TXW51_SERV_I2C_Handle *serviceHandle);
+static uint32_t SERV_I2C_AddChar(struct TXW51_SERV_I2C_Handle *serviceHandle,
                                     uint16_t uuid,
                                     uint8_t charValue,
                                     char *description,
                                     ble_gatts_char_handles_t *charHandle);
-static uint32_t SERV_LSM330_AddChar_TempSample(struct TXW51_SERV_LSM330_Handle *serviceHandle);
-static uint32_t SERV_LSM330_AddChar_TriggerValue(struct TXW51_SERV_LSM330_Handle *serviceHandle);
+static uint32_t SERV_I2C_AddValueChar(struct TXW51_SERV_I2C_Handle *serviceHandle);
 
-/*----- Data -----------------------------------------------------------------*/
 
 /*----- Implementation -------------------------------------------------------*/
 
-uint32_t TXW51_SERV_LSM330_Init(struct TXW51_SERV_LSM330_Handle *handle,
-		                        const struct TXW51_SERV_LSM330_Init *init)
+uint32_t TXW51_SERV_I2C_Init(struct TXW51_SERV_I2C_Handle *handle,
+		                        const struct TXW51_SERV_I2C_Init *init)
 {
     uint32_t err;
 
@@ -60,7 +57,7 @@ uint32_t TXW51_SERV_LSM330_Init(struct TXW51_SERV_LSM330_Handle *handle,
 
     struct TXW51_SERV_ServiceInit serviceInit = {
         .BaseUuid    = TXW51_SERVICE_UUID_BASE,
-        .ServiceUuid = SERVICE_LSM330_UUID_SERVICE,
+        .ServiceUuid = SERVICE_I2C_UUID_SERVICE,
         .IsSecondary = false
     };
 
@@ -69,18 +66,18 @@ uint32_t TXW51_SERV_LSM330_Init(struct TXW51_SERV_LSM330_Handle *handle,
         return err;
     }
 
-    err = SERV_LSM330_AddAllChars(handle);
+    err = SERV_I2C_AddAllChars(handle);
     if (err != ERR_NONE) {
-        TXW51_LOG_ERROR("[LSM330 Service] Could not create all characteristics.");
+        TXW51_LOG_ERROR("[I2C Service] Could not create all characteristics.");
         return err;
     }
 
-    TXW51_LOG_INFO("[LSM330 Service] Service creation successful");
+    TXW51_LOG_INFO("[I2C Service] Service creation successful");
     return ERR_NONE;
 }
 
 
-void TXW51_SERV_LSM330_OnBleEvent(struct TXW51_SERV_LSM330_Handle *handle,
+void TXW51_SERV_I2C_OnBleEvent(struct TXW51_SERV_I2C_Handle *handle,
                                   ble_evt_t *bleEvent)
 {
     TXW51_SERV_OnBleEvent(&handle->ServiceHandle, bleEvent);
@@ -88,19 +85,19 @@ void TXW51_SERV_LSM330_OnBleEvent(struct TXW51_SERV_LSM330_Handle *handle,
 
     switch (bleEvent->header.evt_id) {
         case BLE_GAP_EVT_CONNECTED:
-            SERV_LSM330_OnConnect(handle, bleEvent);
+            SERV_I2C_OnConnect(handle, bleEvent);
             break;
 
         case BLE_GAP_EVT_DISCONNECTED:
-            SERV_LSM330_OnDisconnect(handle, bleEvent);
+            SERV_I2C_OnDisconnect(handle, bleEvent);
             break;
 
         case BLE_GATTS_EVT_WRITE:
-            SERV_LSM330_OnWrite(handle, bleEvent);
+            SERV_I2C_OnWrite(handle, bleEvent);
             break;
 
         case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
-            SERV_LSM330_OnRwAuthRequest(handle, bleEvent);
+            SERV_I2C_OnRwAuthRequest(handle, bleEvent);
             break;
 
         default:
@@ -117,10 +114,10 @@ void TXW51_SERV_LSM330_OnBleEvent(struct TXW51_SERV_LSM330_Handle *handle,
 * @param[in]     bleEvent The BLE event that occurred.
 * @return Nothing.
 ******************************************************************************/
-static void SERV_LSM330_OnConnect(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnConnect(struct TXW51_SERV_I2C_Handle *handle,
                                   ble_evt_t *bleEvent)
 {
-    TXW51_LOG_DEBUG("[LSM330 Service] Connected");
+    TXW51_LOG_DEBUG("[I2C Service] Connected");
 }
 
 
@@ -131,10 +128,10 @@ static void SERV_LSM330_OnConnect(struct TXW51_SERV_LSM330_Handle *handle,
 * @param[in]     bleEvent The BLE event that occurred.
 * @return Nothing.
 ******************************************************************************/
-static void SERV_LSM330_OnDisconnect(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnDisconnect(struct TXW51_SERV_I2C_Handle *handle,
                                      ble_evt_t *bleEvent)
 {
-    TXW51_LOG_DEBUG("[LSM330 Service] Disconnected");
+    TXW51_LOG_DEBUG("[I2C Service] Disconnected");
 }
 
 
@@ -147,43 +144,43 @@ static void SERV_LSM330_OnDisconnect(struct TXW51_SERV_LSM330_Handle *handle,
 * @param[in]     bleEvent The BLE event that occurred.
 * @return Nothing.
 ******************************************************************************/
-static void SERV_LSM330_OnWrite(struct TXW51_SERV_LSM330_Handle *handle,
+static void SERV_I2C_OnWrite(struct TXW51_SERV_I2C_Handle *handle,
                                 ble_evt_t *bleEvent)
 {
 	ble_gatts_evt_write_t *evtWrite = &bleEvent->evt.gatts_evt.params.write;
 
 	if (handle->EventHandler != NULL) {
-	    struct TXW51_SERV_LSM330_Event evt;
-	    evt.EventType = TXW51_SERV_LSM330_EVT_UNKNOWN;
+	    struct TXW51_SERV_I2C_Event evt;
+	    evt.EventType = TXW51_SERV_I2C_EVT_UNKNOWN;
 
-	    if (evtWrite->handle == handle->CharHandle_AccEnable.value_handle) {
-	        evt.EventType = TXW51_SERV_LSM330_EVT_ACC_EN;
+	    if (evtWrite->handle == handle->CharHandle_I2CValue.value_handle) {
+	        evt.EventType = TXW51_SERV_I2C_EVT_VALUE_WRITE;
 
-	    } else if (evtWrite->handle == handle->CharHandle_GyroEnable.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_GYRO_EN;
+	    } else if (evtWrite->handle == handle->CharHandle_I2CAddress.value_handle) {
+            evt.EventType = TXW51_SERV_I2C_EVT_ADRESS;
 
-	    } else if (evtWrite->handle == handle->CharHandle_AccFscale.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_ACC_FSCALE;
+	    } else if (evtWrite->handle == handle->CharHandle_I2CRegister.value_handle) {
+            evt.EventType = TXW51_SERV_I2C_EVT_REGISTER;
 
-	    } else if (evtWrite->handle == handle->CharHandle_GyroFscale.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_GYRO_FSCALE;
+	    } else if (evtWrite->handle == handle->CharHandle_I2CLength.value_handle) {
+            evt.EventType = TXW51_SERV_I2C_EVT_VALUE_LENGTH;
 
-		} else if (evtWrite->handle == handle->CharHandle_AccOdr.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_ACC_ODR;
+	    }
 
-        } else if (evtWrite->handle == handle->CharHandle_GyroOdr.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_GYRO_ODR;
+	    TXW51_LOG_DEBUG("[I2C Service] On Write");
 
-        } else if (evtWrite->handle == handle->CharHandle_TriggerAxis.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_TRIGGER_AXIS;
-
-        } else if (evtWrite->handle == handle->CharHandle_TriggerValue.value_handle) {
-            evt.EventType = TXW51_SERV_LSM330_EVT_TRIGGER_VAL;
-
-        }
-
-	    if (evt.EventType != TXW51_SERV_LSM330_EVT_UNKNOWN) {
+	    if (evt.EventType != TXW51_SERV_I2C_EVT_UNKNOWN) {
 	        evt.Value = evtWrite->data;
+//	        uint8_t dataBuffer [evtWrite->len];
+	        uint8_t i = 0;
+	        for (i = 0; i < evtWrite->len; i++)
+	        {
+//	        	dataBuffer[i] = evtWrite->data[i];
+	        	char debugBuffer[30];
+	           	sprintf(debugBuffer, "write Byte %d with Value %d", i, evtWrite->data[i]);
+	        	TXW51_LOG_DEBUG(debugBuffer);
+	        }
+//	        evt.Value = dataBuffer;
             evt.Length = evtWrite->len;
             handle->EventHandler(handle, &evt);
 	    }
@@ -201,36 +198,46 @@ static void SERV_LSM330_OnWrite(struct TXW51_SERV_LSM330_Handle *handle,
 * @param[in]     bleEvent The BLE event that occurred.
 * @return Nothing.
 ******************************************************************************/
-void SERV_LSM330_OnRwAuthRequest(struct TXW51_SERV_LSM330_Handle *handle,
+void SERV_I2C_OnRwAuthRequest(struct TXW51_SERV_I2C_Handle *handle,
                                  ble_evt_t *bleEvent)
 {
     ble_gatts_evt_rw_authorize_request_t *authRequest = &bleEvent->evt.gatts_evt.params.authorize_request;
 
+    TXW51_LOG_DEBUG("[I2C Service] SERV_I2C_OnRwAuthRequest");
+
     if (handle->EventHandler != NULL) {
-        struct TXW51_SERV_LSM330_Event evt;
+        struct TXW51_SERV_I2C_Event evt;
 
         if ((authRequest->type = BLE_GATTS_AUTHORIZE_TYPE_READ) &&
-            (authRequest->request.read.handle == handle->CharHandle_TempSample.value_handle)) {
+            (authRequest->request.read.handle == handle->CharHandle_I2CValue.value_handle)) {
             uint32_t err;
 
             /* Handle event. */
-            uint8_t tempValue = 0;
-            evt.EventType = TXW51_SERV_LSM330_EVT_TEMP_SAMPLE;
-            evt.Value = &tempValue;
+            uint8_t tempValue [TXW51_SERV_I2C_VALUE_MAX_LENGTH];
+            uint8_t i;
+            for (i = 0; i < TXW51_SERV_I2C_VALUE_MAX_LENGTH; i++)
+            {
+            	tempValue[i] = 0;
+            }
+            evt.EventType = TXW51_SERV_I2C_EVT_VALUE_READ;
+            evt.Value = tempValue;
             handle->EventHandler(handle, &evt);
+
+
+            TXW51_LOG_DEBUG("[I2C Service] I2C Value Read Event");
 
             /* Reply to peer. */
             ble_gatts_rw_authorize_reply_params_t reply;
             reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
             reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
-            reply.params.read.p_data = &tempValue;
-            reply.params.read.len = 1;
+            reply.params.read.p_data = tempValue;
+            reply.params.read.len = evt.Length;
             reply.params.read.update = 1;
             reply.params.read.offset = 0;
 
             err = sd_ble_gatts_rw_authorize_reply(bleEvent->evt.gatts_evt.conn_handle, &reply);
             if (err != NRF_SUCCESS) {
-                TXW51_LOG_WARNING("[LSM330 Service] Temperature read failed!");
+                TXW51_LOG_WARNING("[I2C Service] Error I2C Value Read!");
             }
         }
     }
@@ -245,81 +252,41 @@ void SERV_LSM330_OnRwAuthRequest(struct TXW51_SERV_LSM330_Handle *handle,
 *         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
 *                                            added.
 ******************************************************************************/
-static uint32_t SERV_LSM330_AddAllChars(struct TXW51_SERV_LSM330_Handle *serviceHandle)
+static uint32_t SERV_I2C_AddAllChars(struct TXW51_SERV_I2C_Handle *serviceHandle)
 {
     uint32_t err;
 
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_ACC_EN,
+    err = SERV_I2C_AddChar(serviceHandle,
+                              SERVICE_I2C_UUID_CHAR_ADDRESS,
                               0,
-                              SERVICE_LSM330_STRING_CHAR_ACC_EN,
-                              &serviceHandle->CharHandle_AccEnable);
+                              SERVICE_I2C_STRING_CHAR_ADDRESS,
+                              &serviceHandle->CharHandle_I2CAddress);
     if (err != ERR_NONE) {
         return err;
     }
 
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_GYRO_EN,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_GYRO_EN,
-                              &serviceHandle->CharHandle_GyroEnable);
-    if (err != ERR_NONE) {
-        return err;
-    }
+	err = SERV_I2C_AddChar(serviceHandle,
+							  SERVICE_I2C_UUID_CHAR_REGISTER,
+							  0,
+							  SERVICE_I2C_STRING_CHAR_REGISTER,
+							  &serviceHandle->CharHandle_I2CRegister);
+	if (err != ERR_NONE) {
+		return err;
+	}
 
-    err = SERV_LSM330_AddChar_TempSample(serviceHandle);
-    if (err != ERR_NONE) {
-        return err;
-    }
 
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_ACC_FSCALE,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_ACC_FSCALE,
-                              &serviceHandle->CharHandle_AccFscale);
-    if (err != ERR_NONE) {
-        return err;
-    }
+	err = SERV_I2C_AddChar(serviceHandle,
+							  SERVICE_I2C_UUID_CHAR_LENGTH,
+							  1,
+							  SERVICE_I2C_STRING_CHAR_LENGTH,
+							  &serviceHandle->CharHandle_I2CLength);
+	if (err != ERR_NONE) {
+		return err;
+	}
 
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_GYRO_FSCALE,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_GYRO_FSCALE,
-                              &serviceHandle->CharHandle_GyroFscale);
+    err = SERV_I2C_AddValueChar(serviceHandle);
     if (err != ERR_NONE) {
-        return err;
-    }
-
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_ACC_ODR,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_ACC_ODR,
-                              &serviceHandle->CharHandle_AccOdr);
-    if (err != ERR_NONE) {
-        return err;
-    }
-
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_GYRO_ODR,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_GYRO_ODR,
-                              &serviceHandle->CharHandle_GyroOdr);
-    if (err != ERR_NONE) {
-        return err;
-    }
-
-    err = SERV_LSM330_AddChar_TriggerValue(serviceHandle);
-    if (err != ERR_NONE) {
-        return err;
-    }
-
-    err = SERV_LSM330_AddChar(serviceHandle,
-                              SERVICE_LSM330_UUID_CHAR_TRIGGER_AXIS,
-                              0,
-                              SERVICE_LSM330_STRING_CHAR_TRIGGER_AXIS,
-                              &serviceHandle->CharHandle_TriggerAxis);
-    if (err != ERR_NONE) {
-        return err;
+		return err;
     }
 
     return ERR_NONE;
@@ -338,7 +305,7 @@ static uint32_t SERV_LSM330_AddAllChars(struct TXW51_SERV_LSM330_Handle *service
 *         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
 *                                            added.
 ******************************************************************************/
-static uint32_t SERV_LSM330_AddChar(struct TXW51_SERV_LSM330_Handle *serviceHandle,
+static uint32_t SERV_I2C_AddChar(struct TXW51_SERV_I2C_Handle *serviceHandle,
                                     uint16_t uuid,
                                     uint8_t charValue,
                                     char *description,
@@ -348,7 +315,7 @@ static uint32_t SERV_LSM330_AddChar(struct TXW51_SERV_LSM330_Handle *serviceHand
 
     /* Initialize characteristic. */
     TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
-                        uuid,
+    					uuid,
                         &charInit);
 
     /* Set up characteristic. */
@@ -371,53 +338,24 @@ static uint32_t SERV_LSM330_AddChar(struct TXW51_SERV_LSM330_Handle *serviceHand
 
 
 /***************************************************************************//**
-* @brief Adds the "Temperature Sample" characteristic to the service.
+* @brief Adds a characteristic that contains a 1 byte value to the service.
 *
 * @param[in,out] serviceHandle The handle for the service.
+* @param[in]     uuid          The two UUID bytes for the characteristic.
+* @param[in]     charValue     The initial value.
+* @param[in]     description   The user description of the characteristic.
+* @param[out]    charHandle    The handle for the characteristic.
 * @return ERR_NONE if no error occurred.
 *         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
 *                                            added.
 ******************************************************************************/
-static uint32_t SERV_LSM330_AddChar_TempSample(struct TXW51_SERV_LSM330_Handle *serviceHandle)
+static uint32_t SERV_I2C_AddValueChar(struct TXW51_SERV_I2C_Handle *serviceHandle)
 {
     struct TXW51_SERV_CharInit charInit;
 
     /* Initialize characteristic. */
     TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
-                        SERVICE_LSM330_UUID_CHAR_TEMP_SAMPLE,
-                        &charInit);
-
-    /* Set up characteristic. */
-    charInit.Metadata.char_props.read = 1;
-    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.read_perm);
-    charInit.AttrMetadata.rd_auth = 1;
-
-    /*add_desc_user_description(&charInit, (uint8_t *)SERVICE_LSM330_STRING_CHAR_TEMP_SAMPLE);*/
-
-    charInit.Attribute.max_len = 1;
-
-    /* Add characteristic. */
-    return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
-                              &charInit,
-                              &serviceHandle->CharHandle_TempSample);
-}
-
-
-/***************************************************************************//**
-* @brief Adds the "Trigger Value" characteristic to the service.
-*
-* @param[in,out] serviceHandle The handle for the service.
-* @return ERR_NONE if no error occurred.
-*         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
-*                                            added.
-******************************************************************************/
-static uint32_t SERV_LSM330_AddChar_TriggerValue(struct TXW51_SERV_LSM330_Handle *serviceHandle)
-{
-    struct TXW51_SERV_CharInit charInit;
-
-    /* Initialize characteristic. */
-    TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
-                        SERVICE_LSM330_UUID_CHAR_TRIGGER_VAL,
+    					SERVICE_I2C_UUID_CHAR_REGISTER_VALUE,
                         &charInit);
 
     /* Set up characteristic. */
@@ -426,13 +364,17 @@ static uint32_t SERV_LSM330_AddChar_TriggerValue(struct TXW51_SERV_LSM330_Handle
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.read_perm);
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.write_perm);
 
-    /*add_desc_user_description(&charInit, (uint8_t *)SERVICE_LSM330_STRING_CHAR_TRIGGER_VAL);*/
+    charInit.AttrMetadata.rd_auth = 1;
 
-    charInit.Attribute.max_len = 2;
+    /*add_desc_user_description(&charInit, (uint8_t *)SERVICE_I2C_STRING_CHAR_REGISTER_VALUE);*/
+
+    charInit.Attribute.init_len = 1;
+    charInit.Attribute.max_len  = TXW51_SERV_I2C_VALUE_MAX_LENGTH;
+    charInit.Attribute.p_value  = 0;
+    charInit.AttrMetadata.vlen  = 1;
 
     /* Add characteristic. */
     return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
                               &charInit,
-                              &serviceHandle->CharHandle_TriggerValue);
+                              &serviceHandle->CharHandle_I2CValue);
 }
-

@@ -32,6 +32,7 @@
 #include "app/sensor.h"
 #include "app/timer.h"
 #include "app/contactless_temp.h"
+#include "app/i2cBridge.h"
 
 /*----- Macros ---------------------------------------------------------------*/
 
@@ -50,7 +51,8 @@ bool gIsTimeout = false;
 static struct TXW51_SERV_DIS_Handle serviceHandleDis;           /**< Handle for the DIS Bluetooth service. */
 static struct TXW51_SERV_LSM330_Handle serviceHandleLsm330;     /**< Handle for the LSM330 Bluetooth service. */
 static struct TXW51_SERV_MEASURE_Handle serviceHandleMeasure;   /**< Handle for the Measurement Bluetooth service. */
-static struct TXW51_SERV_TEMP_CONTACTLESS_Handle serviceHandleContactlessTemp;	/**< Handle for the contactless temperature Bluetooth service. */
+//static struct TXW51_SERV_TEMP_CONTACTLESS_Handle serviceHandleContactlessTemp;	/**< Handle for the contactless temperature Bluetooth service. */
+static struct TXW51_SERV_I2C_Handle serviceHandleI2c;			/**< Handle for the I2C Bluetooth service */
 
 /*----- Implementation -------------------------------------------------------*/
 
@@ -93,6 +95,8 @@ static void APPL_BleEventHandler(ble_evt_t *bleEvent)
     TXW51_SERV_DIS_OnBleEvent(&serviceHandleDis, bleEvent);
     TXW51_SERV_LSM330_OnBleEvent(&serviceHandleLsm330, bleEvent);
     TXW51_SERV_MEASURE_OnBleEvent(&serviceHandleMeasure, bleEvent);
+    //TXW51_SERV_TEMP_CONTACTLESS_OnBleEvent(&serviceHandleContactlessTemp, bleEvent);
+    TXW51_SERV_I2C_OnBleEvent(&serviceHandleI2c, bleEvent);
 
     /* Local BLE event handling. */
     switch (bleEvent->header.evt_id) {
@@ -139,6 +143,8 @@ static void APPL_Init(void)
     TXW51_SPI_Init(TXW51_SPI_0);
     APPL_SENSOR_Init();
 
+    APPL_I2C_BRIDGE_Init();
+
     APPL_FIFO_Init();
     APPL_DEVINFO_Init();
     APPL_DEVINFO_Load();
@@ -148,7 +154,8 @@ static void APPL_Init(void)
     APPL_DEVINFO_InitService(&serviceHandleDis);
     APPL_SENSOR_InitService(&serviceHandleLsm330);
     APPL_MEASUREMENT_InitService(&serviceHandleMeasure);
-    APPL_CONTACTLESS_TEMP_InitService(&serviceHandleContactlessTemp);
+    //APPL_CONTACTLESS_TEMP_InitService(&serviceHandleContactlessTemp);
+    APPL_I2C_BRIDGE_InitService(&serviceHandleI2c);
     TXW51_BLE_InitAdvertising();
 
     TXW51_LOG_INFO("Initialization successful!");

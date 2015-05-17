@@ -515,6 +515,7 @@ static void SENSOR_EnableGyro(uint8_t enable)
 static void SENSOR_GetTemperature(uint8_t *value)
 {
     TXW51_LSM330_GetTemperature(value);
+    //TXW51_TMP006_GetTemperature(value);
 
     /* Convert sensor value to real temperature. */
     *value = TXW51_LSM330_TEMP_REF - *value;
