@@ -1,4 +1,18 @@
 \chapter*{Management Summary}
 \label{chap:managementSummary}
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus scelerisque, leo sed iaculis ornare, mi leo semper urna, ac elementum libero est at risus. Donec eget aliquam urna. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc fermentum nunc sollicitudin leo porttitor volutpat. Duis ac enim lectus, quis malesuada lectus. Aenean vestibulum suscipit justo, in suscipit augue venenatis a. Donec interdum nibh ligula. Aliquam vitae dui a odio cursus interdum quis vitae mi. Phasellus ornare tortor fringilla velit accumsan quis tincidunt magna eleifend. Praesent nisl nibh, cursus in mattis ac, ultrices ac nulla. Nulla ante urna, aliquet eu tempus ut, feugiat id nisl. Nunc sit amet mauris vitae turpis scelerisque mattis et sed metus. Aliquam interdum congue odio, sed semper elit ullamcorper vitae. Morbi orci elit, feugiat vel hendrerit nec, sollicitudin non massa. Quisque lacus metus, vulputate id ullamcorper id, consequat eget orci \nocite{kopka:band1} \nocite{Marti06}. 
+
+Im Rahmen des Modules Projekt 2 wurde durch Roger Jaggi und Pascal Bohni unter der Leitung von Andreas Danuser ein Telemetrie-Konzept für die Bern Formula Student erarbeitet. Bern Formula Student (kurz BFS) ist ein Studentenprojekt, um mit einem eigens konstruierten Elektro-Rennauto an den bekannten Formula Student Rennen teilzunehmen. 
+
+Während des Projektes wurden folgende Telemetrie-Komponenten erarbeitet:
+
+\begin{itemize}
+\itemsep1pt\parskip0pt\parsep0pt
+\item Prototyp I2C-Bridge für SMING, benötigt für den kontaktlosen Temperatursensor
+\item Prototyp CAN-to-MQTT Bridge, benötigt zum Übermitteln der Daten der drei CAN-Busse des Fahrzeuges über das MQTT-Protokoll.
+\item Prototyp IoT Gateway, benötigt zum Übermitteln der MQTT-Daten in die Cloud
+\end{itemize}
+
+Jeder Prototyp ist soweit lauffähig, so dass bereits erste Funktionsdemos gemacht werden konnten.
+
+Die Weiterführung der Arbeit wird Anfangs Juli stattfinden, wenn zeitgleich seitens des BFS-Teams das Rennauto zusammengebaut wird. Für eine komplette Telemetrie wird es nötig sein, alle Komponenten in das Auto einzubauen, einen weiteren Funktionstest zu machen sowie die Anzeige für die Monitore in der Boxengasse zu gestalten.
