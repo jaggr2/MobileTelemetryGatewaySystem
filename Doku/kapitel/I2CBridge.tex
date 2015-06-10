@@ -1,0 +1,24 @@
+\chapter{BLE-I2C Bridge}
+\label{bleI2cBridge}
+
+Das Sming verfügt über den Erweiterungsheader die Möglichkeit I2C Sensoren anzusprechen. Um diese Funktion zu nutzen muss die Firmware des Smings erweitert werden. Dies ist nicht Straight-Forward weil für die Entwicklung in C und das Deployment auf den NRF51 spezielle Hardware und Software erforderlich ist. Um dieses Problem zu umgehen wurde die BLE-I2C Bridge entwickelt. Sie soll dazu dienen, dass vom IoT-Gateway via Sming I2C Sensoren und Aktoren angesprochen werden können. Somit muss für einen neuen Sensor die Firmware der Smings nicht angerührt werden. Dafür muss aber das IoT-Gateway programmiert werden. Dieses lässt sich aber je nach Gateway Typ leicht über Ethernet oder USB programmieren. Auch die Softwareentwicklung in JavaScript sollte denn meisten Entwickler in der Informatik Branche weniger schwer fallen als dies bei C der Fall ist.
+
+\section{Implementation}
+\label{bleI2cImplementation}
+
+Für die BLE-I2C Bridge wurde ein eigener BLE-Service aufgesetzt.
+
+\begin{table}[h]
+\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Name & I2C Service                                       \\
+\hline
+Beschreibung & Ein Service für I2C Devices über BLE anzusprechen \\
+\hline
+UUID	&    0x8EDF0500-67E5-DB83-F85B-A1E2AB1C9E7A  \\
+\hline                                            
+\end{tabularx}
+\caption{Ble I2C Service}
+\label{tab:bleI3cService}
+\end{table}
