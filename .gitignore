@@ -23,4 +23,9 @@
 *.blg
 
 *.tex~
+*.glo
+*.idx
+*.ist
+*.lot
+*.lof
 BLE_Gateway/node_modules
