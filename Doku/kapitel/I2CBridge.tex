@@ -8,8 +8,8 @@ Das Sming verfügt über den Erweiterungsheader die Möglichkeit I2C Sensoren an
 
 Für die BLE-I2C Bridge wurde ein eigener BLE-Service aufgesetzt.
 
-\begin{table}[h]
-\centering
+%\begin{table}[h]
+%\centering
 \begin{tabularx}{\textwidth}{|l|X|}
 \hline
 Name & I2C Service                                       \\
@@ -19,6 +19,100 @@ Beschreibung & Ein Service für I2C Devices über BLE anzusprechen \\
 UUID	&    0x8EDF0500-67E5-DB83-F85B-A1E2AB1C9E7A  \\
 \hline                                            
 \end{tabularx}
-\caption{Ble I2C Service}
-\label{tab:bleI3cService}
-\end{table}
+%\caption{Ble I2C Service}
+%\label{tab:bleI2cService}
+%\end{table}
+
+folgende Charakteristiken stehen bei diesem Service zur Verfügung:
+
+%\begin{table}[h]
+%\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Name & I2C Device Adress                                   \\
+\hline
+Beschreibung & Wird verwendet um die I2C Adresse des Sensor (oder Aktor) im Sming einzustellen. \\
+\hline
+UUID	&    0x8EDF0501-67E5-DB83-F85B-A1E2AB1C9E7A  \\
+\hline     
+Anzahl Byte	&    1  \\
+\hline      
+Zugriffsrechte	&   R/W  \\
+\hline        
+Wertebereich	&   0x00 .. 0x7F \\
+\hline          
+Wertebereich	&   0x00 \\
+\hline                                     
+\end{tabularx}
+%\caption{Ble I2C Device Adress Charakteristik}
+%\label{tab:bleI2cDeviceAdress}
+%\end{table}
+
+%\begin{table}[h]
+%\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Name & I2C Device Register                                  \\
+\hline
+Beschreibung & Wird verwendet um das I2C Register des Sensor (oder Aktor) im Sming einzustellen, auf welches geschrieben oder von welchem gelesen werden soll. \\
+\hline
+UUID	&    0x8EDF0502-67E5-DB83-F85B-A1E2AB1C9E7A  \\
+\hline     
+Anzahl Byte	&    1  \\
+\hline      
+Zugriffsrechte	&   R/W  \\
+\hline        
+Wertebereich	&   0x00 .. 0xFF \\
+\hline          
+Wertebereich	&   0x00 \\
+\hline                                     
+\end{tabularx}
+%\caption{Ble I2C Device Register Charakteristik}
+%\label{tab:bleI2cDeviceRegister}
+%\end{table}
+
+%\begin{table}[h]
+%\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Name & I2C Read Length                              \\
+\hline
+Beschreibung & Wird verwendet um die Anzahl Bytes einzustellen, welche von dem eingestellten Register gelesen werden. \\
+\hline
+UUID	&    0x8EDF0503-67E5-DB83-F85B-A1E2AB1C9E7A \\
+\hline     
+Anzahl Byte	&    1  \\
+\hline      
+Zugriffsrechte	&   R/W  \\
+\hline        
+Wertebereich	&   0x00 .. 0xFF \\
+\hline          
+Wertebereich	&   0x00 \\
+\hline                                     
+\end{tabularx}
+%\caption{Ble I2C Device Read Length Charakteristik}
+%\label{tab:bleI2cDeviceReadLength}
+%\end{table}
+
+%\begin{table}[h]
+%\centering
+\begin{tabularx}{\textwidth}{|l|X|}
+\hline
+Name & I2C Read Length                              \\
+\hline
+Beschreibung & Wird verwendet um die eingestellte Anzahl Bytes von dem eingestellten Register zu lesen oder die in der Charakteristik mitgegebene Anzahl Bytes auf das angegebene Register zu schreiben.\\
+\hline
+UUID	&    0x8EDF0504-67E5-DB83-F85B-A1E2AB1C9E7A \\
+\hline     
+Anzahl Byte	&    1 .. 10  \\
+\hline      
+Zugriffsrechte	&   R/W  \\
+\hline        
+Wertebereich	&   0x00 .. 0xFF \\
+\hline          
+Wertebereich	&   0x00 \\
+\hline                                     
+\end{tabularx}
+%\caption{Ble I2C Value Charakteristik}
+%\label{tab:bleI2cValue}
+%\end{table}
