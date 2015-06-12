@@ -285,7 +285,7 @@ require('getmac').getMac(function(err,macAddress){
                                                             if(err) {
                                                                 return console.error("gapEndProcedure error", err);
                                                             }
-                                                            console.log("gapEndProcedure result", result);
+                                                            console.log("Connect with ", clientList.length, " devices");
 
                                                             for(var i = 0; i < clientList.length; i++) {
                                                                 if(clientList[i].value.connectionId == -1) {
@@ -333,7 +333,7 @@ require('getmac').getMac(function(err,macAddress){
                                 if(theClient != null && theClient.isDisconnecting) {
 
                                     // TODO
-                                    console.err("TODO: remove client from client list");
+                                    console.error("TODO: remove client from client list");
                                     console.log('Device disconnected successfully');
                                     return;
                                 }
@@ -406,6 +406,8 @@ require('getmac').getMac(function(err,macAddress){
                                         for (var j = 0; j < numberOfSamples; j++) {
 
                                             var index = 2 + j * 6;
+
+                                            theClient.accFscaleMultiplikator = 0.061;
 
                                             var sample = { sequenceNumber: sequenceNumber,
                                                 point: [  buffer.readInt16LE(index) * theClient.accFscaleMultiplikator, // X-Achse
@@ -481,7 +483,7 @@ require('getmac').getMac(function(err,macAddress){
 
 
 
-                if (connectionId !== undefined && connectionId !== null && connectionId > 0) {
+                if (connectionId !== undefined && connectionId !== null) {
 
                     theClient = getClientByConnectionHandle(connectionId);
                     if(theClient != null) {
