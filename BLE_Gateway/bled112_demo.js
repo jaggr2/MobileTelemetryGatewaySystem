@@ -420,7 +420,7 @@ require('getmac').getMac(function(err,macAddress){
                                             mqttClient.publish('/sming/measurement', JSON.stringify(sample));
 
                                             var fs = require('fs');
-                                            fs.appendFile("/tmp/test", theClient.mac + "," + (new Date()).getTime() + "," + sample.point[0] + "," + sample.point[1] + "," + sample.point[2] + "\n", function (err) {
+                                            fs.appendFile("data.txt", theClient.mac + "," + (new Date()).getTime() + "," + sample.point[0] + "," + sample.point[1] + "," + sample.point[2] + "\n", function (err) {
                                                 if (err) {
                                                     return console.log(err);
                                                 }
