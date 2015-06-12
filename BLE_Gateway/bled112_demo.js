@@ -308,7 +308,7 @@ require('getmac').getMac(function(err,macAddress){
                                                         });
 
 
-                                                    }, 10000)
+                                                    }, 5000)
                                                 }
                                             }
 
@@ -408,16 +408,16 @@ require('getmac').getMac(function(err,macAddress){
                                             var index = 2 + j * 6;
 
                                             var sample = { sequenceNumber: sequenceNumber,
-                                                point: [  buffer.readInt16LE(index), // X-Achse
-                                                    buffer.readInt16LE(index + 2),    // Y-Achse
-                                                    buffer.readInt16LE(index + 4) ],   // Z-Achse
+                                                point: [  buffer.readInt16LE(index) * theClient.accFscaleMultiplikator, // X-Achse
+                                                    buffer.readInt16LE(index + 2) * theClient.accFscaleMultiplikator,    // Y-Achse
+                                                    buffer.readInt16LE(index + 4) * theClient.accFscaleMultiplikator ],   // Z-Achse
                                                 accOrGyro: accOrGyro
                                             };
 
                                             mqttClient.publish('/sming/measurement', JSON.stringify(sample));
 
                                             var fs = require('fs');
-                                            fs.appendFile("/tmp/test", new Date() + "," + sequenceNumber + "," + buffer.readInt16LE(index) + "," + buffer.readInt16LE(index + 2) + "," + buffer.readInt16LE(index + 4) + "\n", function (err) {
+                                            fs.appendFile("/tmp/test", theClient.mac + "," + (new Date()).getTime() + "," + sample.point[0] + "," + sample.point[1] + "," + sample.point[2] + "\n", function (err) {
                                                 if (err) {
                                                     return console.log(err);
                                                 }
@@ -635,6 +635,7 @@ require('getmac').getMac(function(err,macAddress){
                                 theClient.MEASURE_CHAR_DATASTREAM_HANDLE = foundDescriptor.handle;
                                 //console.log("MEASURE_CHAR_DATASTREAM Handle gefunden:", result.resultList[j].chrhandle);
                             }
+
                         }
                     }
 
@@ -735,19 +736,50 @@ require('getmac').getMac(function(err,macAddress){
                                 return console.error("write ccidHandle error", err);
                             }
 
-                            gateway.writeAttribut(connectionHandle, descriptorList, 'MEASURE_CHAR_START', new Buffer([1]), function(err, command, result) {
+
+                            gateway.readAttribut(connectionHandle, descriptorList, 'LSM330_CHAR_ACC_FSCALE', function(err, command, result) {
+
 
                                 if(err) {
-                                    return console.error("writeAttribut MEASURE_CHAR_START error", err);
+                                    return console.error("read LSM330_CHAR_ACC_FSCALE error", err);
                                 }
 
-                                callback(null, true);
+                                theClient.accFscale = result.readData.value;
+
+                                switch(theClient.accFscale) {
+                                    case 0: // 2g messbereich
+                                        theClient.accFscaleMultiplikator = 0.061;
+                                        break;
+                                    case 1: // 4g messbereich
+                                        theClient.accFscaleMultiplikator = 0.122;
+                                        break;
+                                    case 2: // 6g messbereich
+                                        theClient.accFscaleMultiplikator = 0.183;
+                                        break;
+                                    case 3: // 8g messbereich
+                                        theClient.accFscaleMultiplikator = 0.244;
+                                        break;
+                                    case 4: // 16g messbereich
+                                        theClient.accFscaleMultiplikator = 0.732;
+                                        break;
+                                }
+
+                                console.log("LSM330_CHAR_ACC_FSCALE: ", result);
 
 
+                                gateway.writeAttribut(connectionHandle, descriptorList, 'MEASURE_CHAR_START', new Buffer([1]), function(err, command, result) {
+
+                                    if(err) {
+                                        return console.error("writeAttribut MEASURE_CHAR_START error", err);
+                                    }
+
+                                    callback(null, true);
+
+
+
+                                })
 
                             })
-
-
 
                         })
 
