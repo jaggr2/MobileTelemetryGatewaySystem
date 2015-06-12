@@ -7,7 +7,7 @@ var S = require('string'),
     commandQueue = libCommandQueue.commandQueue,
     SerialPort = require("serialport").SerialPort;
 
-var sPort = "ttyACM1";
+var sPort = "ttyACM0";
 var serialSettings = {
     baudrate: 115200,
     flowControl: true
@@ -117,25 +117,34 @@ var setDescriptorValueByHandle = function(list, handle, value) {
 
 
 /* store this to redis */
-/*
-var deviceList = [];
 
-var setGatewayByName = function(name, value) {
-    var entry = getGatewayByName(name);
+var clientList = [];
+
+var setClientByName = function(name, value) {
+    var entry = getClientByName(name);
     if(entry != null) {
         entry.value = value;
     }
     else {
         entry = { name: name, value: value };
-        deviceList.push(entry);
+        clientList.push(entry);
     }
     return entry.value;
 };
 
-var getGatewayByName = function(name) {
-    for(var i = 0; i < deviceList.length; i++) {
-        if(deviceList[i].name == name) {
-            return deviceList[i].value;
+var getClientByName = function(name) {
+    for(var i = 0; i < clientList.length; i++) {
+        if(clientList[i].name == name) {
+            return clientList[i].value;
+        }
+    }
+    return null;
+};
+
+var getClientByConnectionHandle = function(connHandle) {
+    for(var i = 0; i < clientList.length; i++) {
+        if(clientList[i].value.connectionId == connHandle) {
+            return clientList[i].value;
         }
     }
     return null;
@@ -246,17 +255,31 @@ require('getmac').getMac(function(err,macAddress){
                             if(packet.packet.cID == 0) {
 
                                 // ignore discover packets when sming is found
-                                if (gateway.foundSming) return;
+                                //if (gateway.foundSming) return;
 
                                 var btData = packet.response.data;
                                 for (var i = 0; i < btData.length; i++) {
                                     if (btData[i].typeFlag == 9) { // Complete local name
 
                                         if (btData[i].data == 'TXW51') {
-                                            gateway.foundSming = true;
-                                            console.log('Found sming ', packet.response.sender.toString('hex'), packet.response.rssi);
-                                            client.publish('/sming/found', packet.response.sender.toString('hex'));
-                                            gateway.connectToDevice(packet.response.sender);
+                                            //gateway.foundSming = true;
+
+                                            var theClient = getClientByName(packet.response.sender.toString('hex'));
+                                            if(theClient == null) {
+
+                                                console.error()
+                                                theClient = { connectionId: -1, mac: packet.response.sender.toString('hex') };
+
+                                                setClientByName(packet.response.sender.toString('hex'), theClient);
+
+                                                console.log('Found sming ', packet.response.sender.toString('hex'), packet.response.rssi);
+                                                client.publish('/sming/found', packet.response.sender.toString('hex'));
+                                                gateway.connectToDevice(packet.response.sender, function(err, connectionHandle) {
+                                                    theClient.connectionId = connectionHandle;
+                                                    console.log('connectionHandle: ', connectionHandle);
+                                                });
+                                            }
+
                                             return;
                                         }
 
@@ -346,6 +369,13 @@ require('getmac').getMac(function(err,macAddress){
                                         };
 
                                         client.publish('/sming/measurement', JSON.stringify(sample));
+
+                                        var fs = require('fs');
+                                        fs.appendFile("/tmp/test", new Date() + "," + sequenceNumber + "," + buffer.readInt16LE(index) + "," + buffer.readInt16LE(index + 2) + "," + buffer.readInt16LE(index + 4) + "\n", function(err) {
+                                            if(err) {
+                                                return console.log(err);
+                                            }
+                                        });
                                         //samples.push(sample);
                                     }
 
@@ -453,12 +483,11 @@ require('getmac').getMac(function(err,macAddress){
             };
 
 
-
-            gateway.connectToDevice = function(bufferAddr) {
+            gateway.connectToDevice = function(bufferAddr, cb) {
 
                 gateway.isDisconnecting = false;
 
-                // stop scanning if we are scanning already
+                /* stop scanning if we are scanning already
                 gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapEndProcedure, null), 10000, function(err, command, result) {
 
                     if(err) {
@@ -467,20 +496,20 @@ require('getmac').getMac(function(err,macAddress){
                     console.log("gapEndProcedure result", result);
 
                 client.publish('/sming/read', 'read bluetooth attributes');
-
+                */
 
                 // direct connect
                 gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapConnectDirect, [bufferAddr, 1, 60, 76, 100, 9]), 10000, function(err, command, result) {
 
                     if(err) {
+                        cb(err);
                         return console.error("gapConnectDirect error", err);
                     }
                     console.log("gapConnectDirect result", result);
 
                     var connectionHandle = result.connection_handle;
+                    cb(null, connectionHandle);
 
-
-                    console.log('connectionHandle: ', connectionHandle);
 
                     /*
                     gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientReadByHandle, [connectionHandle, 13]), 10000, function(err, command, result) {
@@ -550,6 +579,7 @@ require('getmac').getMac(function(err,macAddress){
 
 
 
+                 /*
                 setTimeout(function() {
 
                     client.publish('/sming/stop', 'stop sming measuring, wait 60s before scanning');
@@ -557,9 +587,9 @@ require('getmac').getMac(function(err,macAddress){
 
                     setTimeout(gateway.startScanning, 60000) }, 2 * 60 * 1000);
 
-                //gateway.startScanning();
+                //gateway.startScanning(); */
 
-            });
+           // });
             };
 
             gateway.readGATT = function(connectionHandle) {
@@ -648,7 +678,7 @@ require('getmac').getMac(function(err,macAddress){
             gateway.startMeasuring = function(connectionHandle, descriptorList, callback) {
 
 
-                gateway.readTimer = setInterval(function() {
+                /* gateway.readTimer = setInterval(function() {
 
                     gateway.readAttribut(connectionHandle, descriptorList, 'LSM330_CHAR_TEMP_SAMPLE', function(err, command, result) {
 
@@ -664,7 +694,7 @@ require('getmac').getMac(function(err,macAddress){
 
                     })
 
-                }, 2000);
+                }, 2000); */
 
                 client.publish('/sming/start', 'start sming measuring');
 
