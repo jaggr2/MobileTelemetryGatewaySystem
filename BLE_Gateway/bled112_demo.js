@@ -7,7 +7,14 @@ var S = require('string'),
     commandQueue = libCommandQueue.commandQueue,
     SerialPort = require("serialport").SerialPort;
 
-var sPort = "ttyACM0";
+var sPort = "/dev/ttyACM0";
+
+if(process.argv.length > 2)
+{
+    sPort = process.argv[2];
+    console.log(sPort);
+}
+
 var serialSettings = {
     baudrate: 115200,
     flowControl: true
@@ -850,7 +857,7 @@ require('getmac').getMac(function(err,macAddress){
     // Serialport Handlers
     var reconnectSerial = function(callback) {
 
-        serial = new SerialPort("/dev/" + sPort, serialSettings , false); // this is the openImmediately flag [default is true]
+        serial = new SerialPort(sPort, serialSettings , false); // this is the openImmediately flag [default is true]
 
         serial.on('data', function (data) {
             //console.log('received serial data: ', data);
