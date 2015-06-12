@@ -144,9 +144,9 @@ var getClientByConnectionHandle = function(connHandle) {
     return null;
 };
 /* store this to redis */
-
+var globalTimer = null;
 var gateway = null;
-
+var mqttClient = null;
 
 require('getmac').getMac(function(err,macAddress){
     if (err)  {
@@ -160,10 +160,10 @@ require('getmac').getMac(function(err,macAddress){
 
 
     // mqtt connect
-    var client  = mqtt.connect('mqtt://web:1234@formula.xrj.ch');
+    mqttClient = mqtt.connect('mqtt://web:1234@formula.xrj.ch');
 
     // enable the subscription router
-    var router = mqttrouter.wrap(client);
+    var router = mqttrouter.wrap(mqttClient);
 
     // MQTT Handlers
     /*
@@ -248,9 +248,6 @@ require('getmac').getMac(function(err,macAddress){
 
                             if(packet.packet.cID == 0) {
 
-                                // ignore discover packets when sming is found
-                                //if (gateway.foundSming) return;
-
                                 var btData = packet.response.data;
                                 for (var i = 0; i < btData.length; i++) {
                                     if (btData[i].typeFlag == 9) { // Complete local name
@@ -258,20 +255,55 @@ require('getmac').getMac(function(err,macAddress){
                                         if (btData[i].data == 'TXW51') {
                                             //gateway.foundSming = true;
 
+                                            console.log('Found Sming ', packet.response.sender.toString('hex'), packet.response.rssi);
+                                            mqttClient.publish('/sming/found', packet.response.sender.toString('hex') + " " + packet.response.rssi);
+
+
                                             var theClient = getClientByName(packet.response.sender.toString('hex'));
                                             if(theClient == null) {
 
-                                                console.error()
-                                                theClient = { connectionId: -1, mac: packet.response.sender.toString('hex') };
+                                                var theClient = {   connectionId: -1,
+                                                    mac: packet.response.sender.toString('hex'),
+                                                    macBuffer: packet.response.sender,
+                                                    isDisconnecting: false
+                                                };
 
                                                 setClientByName(packet.response.sender.toString('hex'), theClient);
 
-                                                console.log('Found sming ', packet.response.sender.toString('hex'), packet.response.rssi);
-                                                client.publish('/sming/found', packet.response.sender.toString('hex'));
-                                                gateway.connectToDevice(packet.response.sender, function(err, connectionHandle) {
-                                                    theClient.connectionId = connectionHandle;
-                                                    console.log('connectionHandle: ', connectionHandle);
-                                                });
+                                                if(globalTimer == null) {
+                                                    globalTimer = setTimeout(function() {
+
+                                                        // stop scanning if we are scanning already
+                                                        gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapEndProcedure, null), 10000, function(err, command, result) {
+
+                                                            if(err) {
+                                                                return console.error("gapEndProcedure error", err);
+                                                            }
+                                                            console.log("gapEndProcedure result", result);
+
+                                                            for(var i = 0; i < clientList.length; i++) {
+                                                                if(clientList[i].value.connectionId == -1) {
+
+
+                                                                    setTimeout(function(currentClient) {
+
+                                                                        gateway.connectToDevice(currentClient, function(err, connectionHandle) {
+                                                                            if(err) {
+                                                                                console.error(err);
+                                                                            }
+                                                                        });
+
+                                                                    }, 500 * i, clientList[i].value);
+
+
+
+                                                                }
+                                                            }
+                                                        });
+
+
+                                                    }, 10000)
+                                                }
                                             }
 
                                             return;
@@ -290,19 +322,29 @@ require('getmac').getMac(function(err,macAddress){
                             if(packet.response.reason) {
 
 
+                                var theClient = getClientByConnectionHandle(packet.response.connection);
 
-                                if(gateway.isDisconnecting) {
-                                    gateway.isDisconnecting = false;
+                                if(theClient != null && theClient.isDisconnecting) {
+
+                                    // TODO
+                                    console.err("TODO: remove client from client list");
                                     console.log('Device disconnected successfully');
                                     return;
                                 }
 
                                 console.error("Connection ", packet.response.connection, " error: ", packet.response.reason.message);
 
-                                client.publish('/sming/stop', 'stop sming connection due to a connection error. Restart discovering in 10s');
-                                gateway.disconnect();
+                                mqttClient.publish('/sming/stop', 'stop sming connection due to a connection error. Restart discovering in 10s');
 
-                                setTimeout(gateway.startScanning, 10000);
+                                gateway.disconnect(packet.response.connection, function() {
+
+                                    // TODO
+                                    console.error("TODO: remove client from client list");
+
+                                });
+
+
+                                //setTimeout(gateway.startScanning, 10000);
 
                                 return;
                             }
@@ -334,54 +376,62 @@ require('getmac').getMac(function(err,macAddress){
 
                         case bgClass.AttributeClient:
 
-                            if(packet.response.atthandle && gateway.MEASURE_CHAR_DATASTREAM_HANDLE && packet.response.atthandle == gateway.MEASURE_CHAR_DATASTREAM_HANDLE) {
+                            if(packet.response.atthandle) {
+
+                                theClient = getClientByConnectionHandle(packet.response.connection);
+
+                                if(theClient != null && theClient.MEASURE_CHAR_DATASTREAM_HANDLE && packet.response.atthandle == theClient.MEASURE_CHAR_DATASTREAM_HANDLE) {
 
 
-                                if(packet.response && Buffer.isBuffer(packet.response.value)) {
+                                    if (packet.response && Buffer.isBuffer(packet.response.value)) {
 
-                                    var buffer = packet.response.value;
-                                    var controllByte = buffer.readInt8(0);
-                                    var numberOfSamples = controllByte & 0x0F;
-                                    var validAxis = (controllByte >> 4) & 0x07;
-                                    var accOrGyro = (controllByte >> 7) & 0x01;
-                                    var sequenceNumber = buffer.readInt8(1);
+                                        var buffer = packet.response.value;
+                                        var controllByte = buffer.readInt8(0);
+                                        var numberOfSamples = controllByte & 0x0F;
+                                        var validAxis = (controllByte >> 4) & 0x07;
+                                        var accOrGyro = (controllByte >> 7) & 0x01;
+                                        var sequenceNumber = buffer.readInt8(1);
 
-                                    //console.log("Measure Event ", numberOfSamples, validAxis, accOrGyro);
+                                        //console.log("Measure Event ", numberOfSamples, validAxis, accOrGyro);
 
-                                    //var samples = [];
+                                        //var samples = [];
 
-                                    // Decode data points.
-                                    for (var j = 0; j < numberOfSamples; j++) {
+                                        // Decode data points.
+                                        for (var j = 0; j < numberOfSamples; j++) {
 
-                                        var index = 2 + j*6;
+                                            var index = 2 + j * 6;
 
-                                        var sample = { sequenceNumber: sequenceNumber,
-                                            point: [  buffer.readInt16LE(index), // X-Achse
-                                                buffer.readInt16LE(index + 2),    // Y-Achse
-                                                buffer.readInt16LE(index + 4) ],   // Z-Achse
-                                            accOrGyro: accOrGyro
-                                        };
+                                            var sample = { sequenceNumber: sequenceNumber,
+                                                point: [  buffer.readInt16LE(index), // X-Achse
+                                                    buffer.readInt16LE(index + 2),    // Y-Achse
+                                                    buffer.readInt16LE(index + 4) ],   // Z-Achse
+                                                accOrGyro: accOrGyro
+                                            };
 
-                                        client.publish('/sming/measurement', JSON.stringify(sample));
+                                            mqttClient.publish('/sming/measurement', JSON.stringify(sample));
 
-                                        var fs = require('fs');
-                                        fs.appendFile("/tmp/test", new Date() + "," + sequenceNumber + "," + buffer.readInt16LE(index) + "," + buffer.readInt16LE(index + 2) + "," + buffer.readInt16LE(index + 4) + "\n", function(err) {
-                                            if(err) {
-                                                return console.log(err);
-                                            }
-                                        });
-                                        //samples.push(sample);
+                                            var fs = require('fs');
+                                            fs.appendFile("/tmp/test", new Date() + "," + sequenceNumber + "," + buffer.readInt16LE(index) + "," + buffer.readInt16LE(index + 2) + "," + buffer.readInt16LE(index + 4) + "\n", function (err) {
+                                                if (err) {
+                                                    return console.log(err);
+                                                }
+                                            });
+                                            //samples.push(sample);
+                                        }
+
+                                        //console.log("samples: ", samples);
+
                                     }
-
-                                    //console.log("samples: ", samples);
-
+                                    else {
+                                        console.log("Measure Event: ", (result.message ? result.message : result))
+                                    }
                                 }
                                 else {
-                                    console.log("Measure Event: ", (result.message ? result.message : result))
+                                    console.log("theClient.MEASURE_CHAR_DATASTREAM_HANDLE is not set or does not match");
                                 }
                             }
                             else {
-                                console.log("Attribute: ", packet);
+                                console.log("ignoring unknown Attribute Info"); //, packet);
                             }
                             break;
 
@@ -414,48 +464,82 @@ require('getmac').getMac(function(err,macAddress){
 
 
 
-            gateway.disconnect = function(callback) {
+            gateway.disconnect = function(connectionId, callback) {
 
-                clearInterval(gateway.readTimer);
+                //clearInterval(gateway.readTimer);
 
                 // disconnect if we are connected already
-                gateway.isDisconnecting = true;
+                //gateway.isDisconnecting = true;
 
-                gateway.commandQueue.quitAllCommands("Device gets disconnected.");
-
-                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [0]), 10000, function (err, command, result) {
+                //gateway.commandQueue.quitAllCommands("Device gets disconnected.");
 
 
-                    if (err) {
-                        return console.error("connectionDisconnect error", err);
+
+                if (connectionId !== undefined && connectionId !== null && connectionId > 0) {
+
+                    theClient = getClientByConnectionHandle(connectionId);
+                    if(theClient != null) {
+
+                        theClient.isDisconnecting = true;
                     }
-                    console.log("connectionDisconnect result", result);
-                });
 
-                // stop advertising if we are advertising already
-                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapSetMode, [0, 0]), 10000, function (err, command, result) {
+                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [connectionId]), 10000, function (err, command, result) {
 
-                    if (err) {
-                        return console.error("gapSetMode error", err);
-                    }
-                    console.log("gapSetMode result", result);
+                        if (err) {
+                            callback(err);
+                            return console.error("connectionDisconnect error", err);
+                        }
 
-                });
+                        callback(null);
+                        console.log("connectionDisconnect result", result);
+                    });
+                }
+                else {
+                    callback(new Error("connectionId is null"));
+                    return console.error("connectionId is null");
+                }
 
-                // stop scanning if we are scanning already
-                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapEndProcedure, null), 10000, function(err, command, result) {
+            };
 
-                    if(err) {
-                        return console.error("gapEndProcedure error", err);
-                    }
-                    console.log("gapEndProcedure result", result);
 
-                });
+            gateway.disconnectAll = function(callback) {
+
+                gateway.commandQueue.quitAllCommands("all Devices get disconnected.");
+
+                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [0]), 10000, function (err, command, result) {
+
+
+                        if (err) {
+                            return console.error("connectionDisconnect error", err);
+                        }
+                        console.log("connectionDisconnect result", result);
+                    });
+
+                    // stop advertising if we are advertising already
+                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapSetMode, [0, 0]), 10000, function (err, command, result) {
+
+                        if (err) {
+                            return console.error("gapSetMode error", err);
+                        }
+                        console.log("gapSetMode result", result);
+
+                    });
+
+                    // stop scanning if we are scanning already
+                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapEndProcedure, null), 10000, function(err, command, result) {
+
+                        if(err) {
+                            return console.error("gapEndProcedure error", err);
+                        }
+                        console.log("gapEndProcedure result", result);
+
+                    });
+
             };
 
             gateway.startScanning = function() {
 
-                client.publish('/sming/discover', 'Start discovering smings');
+                mqttClient.publish('/sming/discover', 'Start discovering smings');
 
                  // set scan parameters
                  gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapSetScanParameters, [0xC8, 0xC8, 0]), 10000, function(err, command, result) {
@@ -477,101 +561,25 @@ require('getmac').getMac(function(err,macAddress){
             };
 
 
-            gateway.connectToDevice = function(bufferAddr, cb) {
+            gateway.connectToDevice = function(theClient, cb) {
 
-                gateway.isDisconnecting = false;
-
-                /* stop scanning if we are scanning already
-                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapEndProcedure, null), 10000, function(err, command, result) {
-
-                    if(err) {
-                        return console.error("gapEndProcedure error", err);
-                    }
-                    console.log("gapEndProcedure result", result);
-
-                client.publish('/sming/read', 'read bluetooth attributes');
-                */
+                mqttClient.publish('/sming/connect', theClient.mac);
 
                 // direct connect
-                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapConnectDirect, [bufferAddr, 1, 60, 76, 100, 9]), 10000, function(err, command, result) {
+                gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.gapConnectDirect, [theClient.macBuffer, 1, 60, 76, 100, 9]), 10000, function(err, command, result) {
 
                     if(err) {
                         cb(err);
                         return console.error("gapConnectDirect error", err);
                     }
-                    console.log("gapConnectDirect result", result);
+                    console.log("gapConnectDirect device", theClient.mac, " result:", result );
 
                     var connectionHandle = result.connection_handle;
+                    theClient.connectionId = connectionHandle;
                     cb(null, connectionHandle);
 
 
-                    /*
-                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientReadByHandle, [connectionHandle, 13]), 10000, function(err, command, result) {
-
-                        if(err) {
-                            return console.error("attClientReadByHandle error", err);
-                        }
-                        console.log("attClientReadByHandle result", result);
-                    }); */
-
-
-
-                    // read attribute
-                    /*
-                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientReadByGroupType, [connectionHandle, 1, 0xFFFF, [0x00, 0x28]]), 10000, function(err, command, result) {
-
-                        if(err) {
-                            return console.error("attClientReadByType error", err);
-                        }
-
-                        var infoService = getUUIDBuffer(DEVICE_INFO_SERVICE);
-                        var lsm330Service = getUUIDBuffer(LSM330_SERVICE);
-                        var measureService = getUUIDBuffer(MEASURE_SERVICE);
-
-                        console.log("attClientReadByType", result);
-                        console.log(infoService, lsm330Service, measureService);
-
-                        for(var k = 0; k < result.resultList.length; k++) {
-
-                            if( infoService.equals(result.resultList[k].uuid)) {
-                                //case lsm330Service.equals(result.resultList[k].uuid):
-                                //case measureService.equals(result.resultList[k].uuid):
-*/
-
-
-
-  /*                                  //break;
-                            }
-
-
-                        }
-
-                        /*
-                        gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [connectionHandle]), 10000, function (err, command, result) {
-
-                            if (err) {
-                                return console.log("connectionDisconnect error", err);
-                            }
-                            console.log("connectionDisconnect result", result);
-                        }); */
-                        gateway.foundSming = false;
-                    });
-
-                    /*
-
-                    gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [connectionHandle]), 10000, function (err, command, result) {
-
-                        if (err) {
-                            return console.log("connectionDisconnect error", err);
-                        }
-                        console.log("connectionDisconnect result", result);
-                    });
-                    gateway.foundSming = false;
-                     */
-
-                //});
-
-
+                });
 
                  /*
                 setTimeout(function() {
@@ -583,7 +591,7 @@ require('getmac').getMac(function(err,macAddress){
 
                 //gateway.startScanning(); */
 
-           // });
+                // });
             };
 
             gateway.readGATT = function(connectionHandle) {
@@ -595,17 +603,22 @@ require('getmac').getMac(function(err,macAddress){
                     }
                     //console.log("attClientFindInformation result", command.duration, result);
 
+                    theClient = getClientByConnectionHandle(connectionHandle);
 
                     var HandleList = [];
                     var descriptorList = getDescriptors();
                     var ccidUuid = new Buffer([0x02, 0x29]);
+
+                    if(!result.resultList) {
+                        console.error("read GATT error");
+                    }
 
                     for(var j = 0; j < result.resultList.length; j++) {
 
 
                         if(result.resultList[j].uuid.equals(ccidUuid)) {
                             console.log("CCID Handle gefunden:", result.resultList[j].chrhandle);
-                            gateway.ccidHandle = result.resultList[j].chrhandle;
+                            theClient.ccidHandle = result.resultList[j].chrhandle;
                         }
 
                         var foundDescriptor = setDescriptorHandle(descriptorList, result.resultList[j].uuid, result.resultList[j].chrhandle);
@@ -613,8 +626,8 @@ require('getmac').getMac(function(err,macAddress){
                             HandleList.push(result.resultList[j].chrhandle)
 
                             if(foundDescriptor.name == "MEASURE_CHAR_DATASTREAM") {
-                                gateway.MEASURE_CHAR_DATASTREAM_HANDLE = foundDescriptor.handle;
-                                console.log("MEASURE_CHAR_DATASTREAM Handle gefunden:", result.resultList[j].chrhandle);
+                                theClient.MEASURE_CHAR_DATASTREAM_HANDLE = foundDescriptor.handle;
+                                //console.log("MEASURE_CHAR_DATASTREAM Handle gefunden:", result.resultList[j].chrhandle);
                             }
                         }
                     }
@@ -634,7 +647,7 @@ require('getmac').getMac(function(err,macAddress){
                             if (err) {
                                 return console.error("attClientReadByHandle error", err);
                             }
-                            console.log("attClientReadByHandle result", command.duration, ( result.readData && result.readData.value ? result.readData.value.toString() : (result.message ? result.message : result)));
+                            //console.log("attClientReadByHandle result", command.duration, ( result.readData && result.readData.value ? result.readData.value.toString() : (result.message ? result.message : result)));
 
 
                             if(result.readData && result.readData.value) {
@@ -643,7 +656,7 @@ require('getmac').getMac(function(err,macAddress){
 
                             if(command.command.isLastCommand) {
 
-                                console.log("finished: ", descriptorList);
+                                //console.log("finished: ", descriptorList);
 
 
                                 gateway.startMeasuring(connectionHandle, descriptorList, function(err) {
@@ -689,10 +702,12 @@ require('getmac').getMac(function(err,macAddress){
                     })
 
                 }, 2000); */
+                console.log("start measuring");
+                mqttClient.publish('/sming/start', 'start sming measuring');
 
-                client.publish('/sming/start', 'start sming measuring');
+                theClient = getClientByConnectionHandle(connectionHandle);
 
-                if(!gateway.ccidHandle ) {
+                if(!theClient.ccidHandle ) {
                     return callback("no ccidHandle available!");
                 }
 
@@ -708,7 +723,7 @@ require('getmac').getMac(function(err,macAddress){
                             return console.error("writeAttribut LSM330_CHAR_ACC_EN error", err);
                         }
 
-                        gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientAttributeWrite, [connectionHandle, gateway.ccidHandle, new Buffer([0x01, 0x00])]), 30000, function(err, command, result) {
+                        gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientAttributeWrite, [connectionHandle, theClient.ccidHandle, new Buffer([0x01, 0x00])]), 30000, function(err, command, result) {
 
                             if(err) {
                                 return console.error("write ccidHandle error", err);
@@ -842,8 +857,8 @@ require('getmac').getMac(function(err,macAddress){
 
                 });
 
-                gateway.disconnect();
-
+                console.log("restart Advertising...");
+                gateway.disconnectAll();
                 gateway.startScanning();
 
             }
@@ -856,7 +871,7 @@ require('getmac').getMac(function(err,macAddress){
     //reconnectSerial();
 
 // start the gateway up
-client.on('connect', function () {
+mqttClient.on('connect', function () {
     reconnectSerial();
 });
 
