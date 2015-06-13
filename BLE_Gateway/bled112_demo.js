@@ -112,10 +112,10 @@ var Gatt = function(descriptorDefinitionList) {
 
     self.getAttributeByHandle = function(handle) {
 
-        for(var i = 0;  i < list.length; i++) {
+        for(var i = 0;  i < self.attributeList.length; i++) {
 
-            if(list[i].handle == handle) {
-                return list[i];
+            if(self.attributeList[i].handle == handle) {
+                return self.attributeList[i];
             }
         }
 
@@ -177,12 +177,16 @@ var btRemoteDevice = function(macBuffer, gatewaysCommandqueue) {
     self.macBuffer = macBuffer;
     self.mac = macBuffer.toString('hex');
     self.connectionState = connectionStates.DISCONNECTED;
-    self.readTimer = null;
+    self.pollingInterval = null;
     self.commandQueue = gatewaysCommandqueue;
     self.gatt = null;
     self.ccidHandle = null;
     self.asyncGATTHandle = null;
     self.connectionTimer = null;
+
+    self.setPollingInterval = function(theInterval) {
+        self.pollingInterval = theInterval;
+    };
 
     self.changeState = function (err, newState) {
 
@@ -209,7 +213,7 @@ var btRemoteDevice = function(macBuffer, gatewaysCommandqueue) {
         }
 
         self.changeState(null, connectionStates.DISCONNECTING);
-        clearInterval(self.readTimer);
+        clearInterval(self.pollingInterval);
 
         gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.connectionDisconnect, [self.connectionId]), 10000, function (err) { //, command, result
             if(err) return callback(new VError(err, 'Error while disconecting btRemoteDevice %s', self.mac));
@@ -365,8 +369,19 @@ var btRemoteDevice = function(macBuffer, gatewaysCommandqueue) {
         }
     };
 
-    self.handleAttributeEvent = function(packet) {
-        self.emit('attributeReceived', packet);
+    self.handleAttributeEvent = function(packet) { // packet.packet.cClass ist immer 4
+
+        switch(packet.packet.cID) {
+            case 5:
+                self.emit('attributeValueReceived', packet);
+                break;
+            case 4:
+                console.log(self.mac, ' got handle information', packet);
+                break;
+
+            default:
+                console.log(self.mac, ' got unknown attribut class packet', packet);
+        }
     };
 
 };
@@ -518,12 +533,12 @@ require('getmac').getMac(function(err,macAddress){
                                             var theRemoteDevice = this;
 
                                             if(err) {
-                                                console.error("BluetoothRemoteDevice ", theRemoteDevice.mac, " is now ", getConnectionStateName(newState), " due to error ", err);
-                                                mqttClient.publish('/sming/connectionState', "BluetoothRemoteDevice " + theRemoteDevice.mac + " is now " + getConnectionStateName(newState) + " due to error " + err)
+                                                console.error("btRemoteDevice ", theRemoteDevice.mac, " is now ", getConnectionStateName(newState), " due to error ", err);
+                                                mqttClient.publish('/sming/' + theRemoteDevice.mac + '/connectionState', getConnectionStateName(newState) + " due to error " + err)
                                             }
                                             else {
-                                                console.log("BluetoothRemoteDevice ", theRemoteDevice.mac, " is now ", getConnectionStateName(newState));
-                                                mqttClient.publish('/sming/connectionState', "BluetoothRemoteDevice " + theRemoteDevice.mac + " is now " + getConnectionStateName(newState));
+                                                console.log("btRemoteDevice ", theRemoteDevice.mac, " is now ", getConnectionStateName(newState));
+                                                mqttClient.publish('/sming/' + theRemoteDevice.mac + '/connectionState', getConnectionStateName(newState) + " ");
                                             }
 
                                             switch(newState) {
@@ -535,12 +550,19 @@ require('getmac').getMac(function(err,macAddress){
 
                                                         gateway.connectNextClient();
 
+                                                        theRemoteDevice.smingStartMeasuring(function(err) {
+
+                                                            if(err) return console.error(err);
+
+                                                            console.log("btRemoteDevice measuring started!");
+                                                        });
+
                                                     });
                                                     break;
                                             }
                                         });
 
-                                        newRemoteDevice.on('attributeReceived', function(packet) {
+                                        newRemoteDevice.on('attributeValueReceived', function(packet) {
 
                                             var theRemoteDevice = this;
 
@@ -603,7 +625,9 @@ require('getmac').getMac(function(err,macAddress){
                                                 }
                                             }
                                             else {
-                                                console.log("btRemoteDevice ", theRemoteDevice.mac, ": got attribut ", packet);
+                                                var attributData = theRemoteDevice.gatt.getAttributeByHandle(packet.response.atthandle);
+
+                                                console.log("btRemoteDevice ", theRemoteDevice.mac, ": got value of attribut ", attributData.name ,":", packet.value);
                                             }
                                         });
 
@@ -611,27 +635,26 @@ require('getmac').getMac(function(err,macAddress){
 
                                             var theRemoteDevice = newRemoteDevice;
 
-                                            /* gateway.readTimer = setInterval(function() {
+                                            theRemoteDevice.setPollingInterval(setInterval(function() {
 
-                                             gateway.readAttribut(connectionHandle, descriptorList, 'LSM330_CHAR_TEMP_SAMPLE', function(err, command, result) {
+                                                theRemoteDevice.readGATTAttribut('LSM330_CHAR_TEMP_SAMPLE', function(err, command, result) {
 
-                                             if(err) {
-                                             console.error('Error reading temperature: ', err);
-                                             }
+                                                    if(err) {
+                                                        console.error('Error reading temperature: ', err);
+                                                    }
 
-                                             if(result && result.readData && result.readData.value && result.readData.value.length == 1) {
-                                             console.log('read temp: ', result.readData.value.readInt8(0));
-                                             client.publish('/sming/temp', result.readData.value.readInt8(0).toString());
-                                             }
+                                                    if(result && result.readData && result.readData.value && result.readData.value.length == 1) {
+                                                        console.log('read temp: ', result.readData.value.readInt8(0));
+                                                        mqttClient.publish('/sming/' + theRemoteDevice.mac + '/temp', result.readData.value.readInt8(0).toString());
+                                                    }
 
 
-                                             })
-
-                                             }, 2000); */
+                                                })
+                                             }, 5000));
 
 
                                             console.log('start sming measuring for ' + theRemoteDevice.mac);
-                                            mqttClient.publish('/sming/start', 'start sming measuring for ' + theRemoteDevice.mac);
+                                            mqttClient.publish('/sming/' + theRemoteDevice.mac + '/start', 'start measuring');
 
 
                                             theRemoteDevice.writeGATTAttribute('LSM330_CHAR_GYRO_EN', new Buffer([1]), function(err, command, result) {
@@ -660,27 +683,31 @@ require('getmac').getMac(function(err,macAddress){
                                                                 return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
                                                             }
 
-                                                            theRemoteDevice.accFscale = result.readData.value;
-
-                                                            switch(theRemoteDevice.accFscale) {
+                                                            switch(result.readData.value.readUInt8(0)) {
                                                                 case 0: // 2g messbereich
+                                                                    theRemoteDevice.accMessbereichInG = 2;
                                                                     theRemoteDevice.accFscaleMultiplikator = 0.061;
                                                                     break;
                                                                 case 1: // 4g messbereich
+                                                                    theRemoteDevice.accMessbereichInG = 4;
                                                                     theRemoteDevice.accFscaleMultiplikator = 0.122;
                                                                     break;
                                                                 case 2: // 6g messbereich
+                                                                    theRemoteDevice.accMessbereichInG = 6;
                                                                     theRemoteDevice.accFscaleMultiplikator = 0.183;
                                                                     break;
                                                                 case 3: // 8g messbereich
+                                                                    theRemoteDevice.accMessbereichInG = 8;
                                                                     theRemoteDevice.accFscaleMultiplikator = 0.244;
                                                                     break;
                                                                 case 4: // 16g messbereich
+                                                                    theRemoteDevice.accMessbereichInG = 16;
                                                                     theRemoteDevice.accFscaleMultiplikator = 0.732;
                                                                     break;
                                                             }
 
-                                                            console.log("accFscaleMultiplikator: ",  theRemoteDevice.accFscaleMultiplikator );
+                                                            console.log(theRemoteDevice.mac,  " Accolemeter",  "Max: " + theRemoteDevice.accMessbereichInG + "G", "Min: " + theRemoteDevice.accFscaleMultiplikator + "mG");
+                                                            mqttClient.publish('/sming/' + theRemoteDevice.mac + '/accelometerMaxG', theRemoteDevice.accMessbereichInG);
 
 
                                                             theRemoteDevice.writeGATTAttribute('MEASURE_CHAR_START', new Buffer([1]), function(err, command, result) {
@@ -767,6 +794,7 @@ require('getmac').getMac(function(err,macAddress){
         }
 
 
+        /*
         if(allConnected && !gateway.isMeasuringStartet) {
             gateway.isMeasuringStartet = true;
 
@@ -780,7 +808,7 @@ require('getmac').getMac(function(err,macAddress){
             }
 
 
-        }
+        }*/
 
     };
 
