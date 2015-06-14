@@ -242,29 +242,6 @@ var btRemoteDevice = function(macBuffer, gatewaysCommandqueue) {
 
             if(err) return callback(new VError(err, 'Error while reading GATT of btRemoteDevice %s', self.mac));
 
-            /*
-            var ccidUuid = new Buffer([0x02, 0x29]);
-
-            if(!result.resultList) {
-                console.error(command.command, "----------", command.command.response);
-
-                return callback(new VError("got no result while reading gatt", result.resultList));
-            }
-
-            for(var j = 0; j < result.resultList.length; j++) {
-
-                if(result.resultList[j].uuid.equals(ccidUuid)) {
-                    self.ccidHandle = result.resultList[j].chrhandle;
-                }
-
-                var attr = self.gatt.getAttributeByUUID(result.resultList[j].uuid);
-
-                if(attr) {
-                    attr.handle = result.resultList[j].chrhandle;
-                }
-            }
-            */
-
             return callback(null);
         });
     };
@@ -919,83 +896,90 @@ function decorateSmingFunctionality(gateway) {
                         return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_GYRO_EN error", theRemoteDevice.mac));
                     }
 
-                    theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_EN', new Buffer([1]), function(err, command, result) {
+                    theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_FSCALE', new Buffer([4]), function(err, command, result) {
 
                         if(err) {
-                            return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_EN error", theRemoteDevice.mac));
+                            return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
                         }
 
-                        //  gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientAttributeWrite, [connectionHandle, theClient.ccidHandle, new Buffer([0x01, 0x00])]), 30000,
-                        theRemoteDevice.enableGattListener(function(err) {
 
-                            if(err) {
-                                return callback(new VError(err, "btRemoteDevice %s read enableGattListener error", theRemoteDevice.mac));
+                        theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_EN', new Buffer([1]), function(err, command, result) {
+
+                            if (err) {
+                                return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_EN error", theRemoteDevice.mac));
                             }
 
-                            theRemoteDevice.readGATTAttribut('LSM330_CHAR_ACC_FSCALE', function(err, command, result) {
+                            //  gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientAttributeWrite, [connectionHandle, theClient.ccidHandle, new Buffer([0x01, 0x00])]), 30000,
+                            theRemoteDevice.enableGattListener(function (err) {
 
-                                if(err) {
-                                    return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
+                                if (err) {
+                                    return callback(new VError(err, "btRemoteDevice %s read enableGattListener error", theRemoteDevice.mac));
                                 }
 
-                                switch(result.readData.value.readUInt8(0)) {
-                                    case 1: // 4g messbereich
-                                        theRemoteDevice.accMessbereichInG = 4;
-                                        theRemoteDevice.accFscaleMultiplikator = 0.122;
-                                        break;
-                                    case 2: // 6g messbereich
-                                        theRemoteDevice.accMessbereichInG = 6;
-                                        theRemoteDevice.accFscaleMultiplikator = 0.183;
-                                        break;
-                                    case 3: // 8g messbereich
-                                        theRemoteDevice.accMessbereichInG = 8;
-                                        theRemoteDevice.accFscaleMultiplikator = 0.244;
-                                        break;
-                                    case 4: // 16g messbereich
-                                        theRemoteDevice.accMessbereichInG = 16;
-                                        theRemoteDevice.accFscaleMultiplikator = 0.732;
-                                        break;
-                                    default: // 2g messbereich
-                                        theRemoteDevice.accMessbereichInG = 2;
-                                        theRemoteDevice.accFscaleMultiplikator = 0.061;
-                                        break;
-                                }
+                                theRemoteDevice.readGATTAttribut('LSM330_CHAR_ACC_FSCALE', function (err, command, result) {
 
-                                console.log("Device ", theRemoteDevice.mac,  " Accolemeter", result.readData.value, " Max: " + theRemoteDevice.accMessbereichInG + "G", "Min: " + theRemoteDevice.accFscaleMultiplikator + "mG");
-                                mqttClient.publish('/sming/' + theRemoteDevice.mac + '/accelometerMaxG', theRemoteDevice.accMessbereichInG);
-
-
-                                theRemoteDevice.writeGATTAttribute('MEASURE_CHAR_START', new Buffer([1]), function(err, command, result) {
-
-                                    if(err) {
-                                        return callback(new VError(err, "btRemoteDevice %s write MEASURE_CHAR_START error", theRemoteDevice.mac));
+                                    if (err) {
+                                        return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
                                     }
 
-                                    theRemoteDevice.setPollingInterval(setInterval(function() {
+                                    switch (result.readData.value.readUInt8(0)) {
+                                        case 1: // 4g messbereich
+                                            theRemoteDevice.accMessbereichInG = 4;
+                                            theRemoteDevice.accFscaleMultiplikator = 0.122;
+                                            break;
+                                        case 2: // 6g messbereich
+                                            theRemoteDevice.accMessbereichInG = 6;
+                                            theRemoteDevice.accFscaleMultiplikator = 0.183;
+                                            break;
+                                        case 3: // 8g messbereich
+                                            theRemoteDevice.accMessbereichInG = 8;
+                                            theRemoteDevice.accFscaleMultiplikator = 0.244;
+                                            break;
+                                        case 4: // 16g messbereich
+                                            theRemoteDevice.accMessbereichInG = 16;
+                                            theRemoteDevice.accFscaleMultiplikator = 0.732;
+                                            break;
+                                        default: // 2g messbereich
+                                            theRemoteDevice.accMessbereichInG = 2;
+                                            theRemoteDevice.accFscaleMultiplikator = 0.061;
+                                            break;
+                                    }
 
-                                        theRemoteDevice.readGATTAttribut('LSM330_CHAR_TEMP_SAMPLE', function(err, command, result) {
-
-                                            if(err) {
-                                                return console.error(theRemoteDevice.mac, 'Error reading temperature: ', err);
-                                            }
-
-                                            if(result && result.readData && result.readData.value && result.readData.value.length == 1) {
-                                                console.log('Device',theRemoteDevice.mac, 'read temp: ', result.readData.value.readInt8(0));
-                                                mqttClient.publish('/sming/' + theRemoteDevice.mac + '/temp', result.readData.value.readInt8(0).toString());
-                                            }
+                                    console.log("Device ", theRemoteDevice.mac, " Accolemeter", result.readData.value, " Max: " + theRemoteDevice.accMessbereichInG + "G", "Min: " + theRemoteDevice.accFscaleMultiplikator + "mG");
+                                    mqttClient.publish('/sming/' + theRemoteDevice.mac + '/accelometerMaxG', theRemoteDevice.accMessbereichInG);
 
 
-                                        })
-                                    }, 5000));
+                                    theRemoteDevice.writeGATTAttribute('MEASURE_CHAR_START', new Buffer([1]), function (err, command, result) {
 
-                                    callback(null, true);
+                                        if (err) {
+                                            return callback(new VError(err, "btRemoteDevice %s write MEASURE_CHAR_START error", theRemoteDevice.mac));
+                                        }
+
+                                        theRemoteDevice.setPollingInterval(setInterval(function () {
+
+                                            theRemoteDevice.readGATTAttribut('LSM330_CHAR_TEMP_SAMPLE', function (err, command, result) {
+
+                                                if (err) {
+                                                    return console.error(theRemoteDevice.mac, 'Error reading temperature: ', err);
+                                                }
+
+                                                if (result && result.readData && result.readData.value && result.readData.value.length == 1) {
+                                                    console.log('Device', theRemoteDevice.mac, 'read temp: ', result.readData.value.readInt8(0));
+                                                    mqttClient.publish('/sming/' + theRemoteDevice.mac + '/temp', result.readData.value.readInt8(0).toString());
+                                                }
+
+
+                                            })
+                                        }, 5000));
+
+                                        callback(null, true);
+                                    })
+
                                 })
 
                             })
 
                         })
-
-
 
 
                     })
