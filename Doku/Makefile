@@ -5,9 +5,9 @@ RUBBER_OPTIONS=--module bibtex --module index --module makeidx --module glossari
 pdf: markdown rubber 
 	
 rubber:
-	-rm -f main.pdf
-	rubber --pdf 	 $(RUBBER_OPTIONS)  main.tex
-	rubber --clean $(RUBBER_OPTIONS)  main.tex
+	-rm -f Projekt2.pdf
+	rubber --pdf 	 $(RUBBER_OPTIONS)  Projekt2.tex
+	rubber --clean $(RUBBER_OPTIONS)  Projekt2.tex
 
 markdown: 
 		@# convert markdown files to latex
@@ -28,18 +28,18 @@ test:
 fallback: clean markdown run-1 bibtex glossar run-2 run-3
 
 glossar: run-1 
-	makeindex -s main.ist -t main.glg -o main.gls main.glo
+	makeindex -s Projekt2.ist -t Projekt2.glg -o Projekt2.gls Projekt2.glo
 	
 bibtex: run-1
 	bibtex main
 
 run-1 run-2 run-3:
 	@# On failire: run with toutput
-	@pdflatex -interaction=batchmode main.tex || ( \
+	@pdflatex -interaction=batchmode Projekt2.tex || ( \
 		echo "-----------------------------------------------------------------"; \
 		echo "!Error while compiling latex. Running again with more output. "; \
 		echo "-----------------------------------------------------------------"; \
-		pdflatex -interaction=nonstopmode main.tex; \
+		pdflatex -interaction=nonstopmode Projekt2.tex; \
 	)
 
 clean: 
