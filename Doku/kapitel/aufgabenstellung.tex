@@ -1,63 +1,58 @@
 \chapter{Aufgabenstellung}
 \label{chap:aufgabenstellung}
 
-Von Seiten Bern Formula Student wurden folgende Zielvorstellung an die Telemetrie formuliert:
+Von Seiten Bern Formula Student wurde folgende Zielvorstellung an die Telemetrie formuliert:
 
-Grundsätzliches möglichst alle Daten übermitteln, die auf den drei CAN-Bus-Systemen des Fahrzeuges übertragen werden. Zum jetzigen Zeitpunkt sind folgende Sensoren im Fahrzeug eingeplant:
+\textit{Grundsätzliches möglichst alle Daten übermitteln, die auf den drei CAN-Bus-Systemen des Fahrzeuges übertragen werden.} 
+
+Zum jetzigen Zeitpunkt sind dies:
 
 \begin{itemize}
 	\itemsep 1pt \parskip 0pt \parsep 0pt
 	\item \textbf{Eingangsgrössen Fahrer}		
 		\begin{itemize}
 			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item Fahrpedalstellung		CAN 1
-			\item Bremspedalstellung	CAN 1
-			\item Bremsdruck			CAN 1
-			\item Lenkwinkel			CAN 1
+			\item Fahrpedalstellung		\textit{CAN 1}
+			\item Bremspedalstellung	\textit{CAN 1}
+			\item Bremsdruck			\textit{CAN 1}
+			\item Lenkwinkel			\textit{CAN 1}
 		\end{itemize}
 	\item \textbf{Motor und Kühlsystem}		
 		\begin{itemize}
 			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item Soll-Moment			CAN 2/3
-			\item Ist-Moment			CAN 2/3
-			\item Soll-Drehzahl			CAN 2/3
-			\item Ist-Drehzahl			CAN 2/3
-			\item Motortemperatur		CAN 2/3
-			\item Kühlmitteltemperatur	CAN 1
+			\item Soll-Moment			\textit{CAN 2/3}
+			\item Ist-Moment			\textit{CAN 2/3}
+			\item Soll-Drehzahl			\textit{CAN 2/3}
+			\item Ist-Drehzahl			\textit{CAN 2/3}
+			\item Motortemperatur		\textit{CAN 2/3}
+			\item Kühlmitteltemperatur	\textit{CAN 1}
 		\end{itemize}		
 	\item \textbf{Batterie}		
 		\begin{itemize}
 			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item HV-Spannung				CAN 1
-			\item HV-Stromg					CAN 1
-			\item HV-Batterie Ladestand		CAN 1
-			\item GLV Batterie Spannung		Wireless über Sming
+			\item HV-Spannung				\textit{CAN 1}
+			\item HV-Stromg					\textit{CAN 1}
+			\item HV-Batterie Ladestand		\textit{CAN 1}
+			\item GLV Batterie Spannung		\textit{Wireless über Sming}
 		\end{itemize}
 					
 	\item \textbf{Fahrzeug}		
 	\begin{itemize}
 		\itemsep 1pt \parskip 0pt \parsep 0pt
-		\item Geschwindigkeit						CAN 1
-		\item Beschleunigung						CAN 1
-		\item Drehrate 								CAN 1
-		\item Reifentemperatur						Wireless über Sming
-		\item Bremstemperatur						Wireless über Sming
-		\item Bodentemperatur						Wireless über Sming
-		\item Lufttempertur bei Kühlereintritt		Wireless über Sming
-		\item Lufttempertur bei Kühleraustritt		Wireless über Sming
-		\item Dämpferweg							Wireless über Sming
+		\item Geschwindigkeit						\textit{CAN 1}
+		\item Beschleunigung						\textit{CAN 1}
+		\item Drehrate 								\textit{CAN 1}
+		\item Reifentemperatur						\textit{Wireless über Sming}
+		\item Bremstemperatur						\textit{Wireless über Sming}
+		\item Bodentemperatur						\textit{Wireless über Sming}
+		\item Lufttempertur bei Kühlereintritt		\textit{Wireless über Sming}
+		\item Lufttempertur bei Kühleraustritt		\textit{Wireless über Sming}
+		\item Dämpferweg (optional)					\textit{Wireless über Sming}
 		
 	\end{itemize}			
 \end{itemize}
 
-Die Anbindung bei "Wireless über Sming" bedeutet, dass wir selber Sensoren zur Erfassung der gewünschten Messgrössen liefern sollen. Beim Erfassen der Temperaturwerten wie beispielsweise der Kühlluft-Eingangs sowie Ausgangstemperatur, soll der kontaktlose Temperatursensor auf einen schwarz markierten Referenzpunkt gerichtet, damit man die für die Messgrösse einen vernünftigen Wert erhält.
+Die Anbindung "Wireless über Sming" bedeutet, dass wir selber Sensoren zur Erfassung der gewünschten Messgrössen liefern sollen. Die Sensoren sollen dabei drahtlos über den Bluetooth-Stack des Smings kommunizieren.
 
+Erweitert wurde die Aufgabenstellung von Andreas Danuser durch die Konstruktionsvorgabe, dass die einzelnen Komponenten der Telemetrie möglichst universell, sprich als eigenständiges Modul auch in einem komplett anderen Einsatzzweck, verwendbar sein sollen.
 
-Erweitert wurde die Aufgabenstellung von Andreas Danuser durch folgende Konstruktionsvorgaben:
-
-\begin{itemize}
-\itemsep 1pt \parskip 0pt \parsep 0pt
-\item Die einzelnen Komponenten der Telemterie sollen möglichst universell , sprich auch in einem komplett anderen Einsatzzweck, verwendbar sein.
-\item Das System soll modular aufgebaut werden.
-
-\end{itemize}
