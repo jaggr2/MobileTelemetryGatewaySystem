@@ -1,0 +1,64 @@
+\chapter{Beispiel Bluegiga Anbindung}
+Beispiel-Befehlsabfolge, wie sie beim Sming zum Einsatz kommt. Detailbeschrieb der Parameter siehe Bluegiga API 1.3 Doku. Die Parameter-Werte entsprechen denen im Demo-Script und sollten lauffähig sein:
+	
+\begin{itemize}
+	\itemsep 1pt \parskip 0pt \parsep 0pt
+	\item Suche nach BLE Advertisments
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.gapSetScanParameters(0xC8, 0xC8, 0)
+		\item bg.api.gapDiscover(1)
+	\end{itemize}
+	
+	\item Wenn ein Device mit Name TXW51 gefunden, beende Suche kommt als Event mit Class = GenericAccessProfile siehe Demo-Script ab Zeile 238
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item Suche beenden: bg.api.gapEndProcedure()
+	\end{itemize}
+	
+	
+	\item Verbinde zum gefundenen Device anhand seiner MAC-Adresse
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.gapConnectDirect( <MAC-Addr>, 1, 60, 76, 100, 9)
+	\end{itemize}
+	
+	
+	
+	\item Hole einfach mal komplette Handle-Liste der Bluetooth Attribute (Optimieriungspotential da)
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.attClientFindInformation( <connectionHandle>, 1, 0xffff)
+	\end{itemize}
+	
+	
+	\item Stimme die SMING UUIDs mit denen in der Handle-Liste überein. Merke zu jeder UUID deren Handle sowie UUID der CCID Attributes (siehe später)
+	
+	
+	\item Lese mit den entsprechenden Handle das Attribut (ich habe einfach mal jeweils immmer gerade mal alle eingelesen)
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.attClientReadByHandle(<connection>, <uuid handle> )
+	\end{itemize}
+	
+	
+	\item Zum Aktivieren der Accelometer-Messungen müssen folgende Attributte geschrieben werden:
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.attClientAttributeWrite( <connection>, <uuid handle>, <newValue>)
+		\item \url{LSM330_CHAR_GYRO_EN} = 1 
+		\item \url{LSM330_CHAR_ACC_EN} = 1 
+		\item \url{CCID UUID 0x02, 0x29 = 0x01, 0x00} ( Dies aktiviert das Bluetooth Feature CCID, wodruch das Sming bei Sming seitiger Attributwertänderung automatisch den neuen Wert sendet. Die Messwerte werden so per Push übertragen. Seitens Sming wird somit einfach der Messwert auf das Attribut \url{MEASURE_CHAR_DATASTREAM} geschrieben. Dies löst aus, dass der Bluetooth Stack des Smings automatisch den neue Messwert als Event zum Bluegiga Dongle übertragt und wir das so mitkriegen)
+		\item \url{MEASURE_CHAR_START} = 1
+	\end{itemize}
+	
+	
+	\item Das Lesen der Temperatur muss mit einem Polling auf Attribut \url{LSM330_CHAR_TEMP_SAMPLE} gemacht werden.
+	
+	\item Beende Verbindung zum Sming
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item bg.api.connectionDisconnect( <connection> )
+	\end{itemize}
+\end{itemize}
+

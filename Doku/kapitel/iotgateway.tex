@@ -40,8 +40,13 @@ Als UMTS-Router setzen wir auf den Netmodule Router NB1600. Dieser kam schon in 
 
 
 \section{BLED112}
-Die zweite Schnittstelle zu den Sensoren ist der USB Dongle BLED112 von Bluegiga. Dieser integriert den ganzen Bluetooth Smart Stack, der dank einer API über eine serielle Schnittstelle angesprochen werden kann.
+Die Schnittstelle zu den Sensoren an den SMINGS ist der USB Dongle BLED112 von Bluegiga. Dieser Mikrocontroller integriert den ganzen Bluetooth Smart Stack, der dank einer API über eine serielle Schnittstelle angesprochen werden kann. Damit ist es nicht nur möglich, die Bluetooth Advertisements der SMINGS zu empfangen, es kann auch mit bis 3\footnote{Die maximale Beschränkung von 3 wurde aus Praxistests mit den Smings festgestellt} Bluetooth 4.0 Geräten verbunden und kommuniziert werden.
 
+Der Bluegiga Chip ist nebst dem auch ein Konkurrenzprodukt zum nRF51 Chip von Nordic, der auf dem Sming zum Einsatz kommt. Wie auch der nRF51 ist der Bluegiga programmierbar, wodurch auch mit diesem autonome smarte Elektronikprojekte realisiert werden können.
+
+Im Anhang findet sich eine Beispiel-Befehlsabfolge, wie sie aktuell zum Verbinden mit dem Smings zum Einsatz kommt. Weitere Informationen wie API Dokumentation, Windows Treiber\footnote{Bei Linux/Mac sind die Treiber bereits im Kernel vorhanden}, etc. finden sich auf folgender Seite:
+ \url{https://www.bluegiga.com/en-US/products/bled112-bluetooth-smart-dongle/#documentation}
+ 
 \begin{figure}[hbtp]
 	\center
 	\includegraphics[width=4cm]{bilder/bled112.jpg}
@@ -49,90 +54,3 @@ Die zweite Schnittstelle zu den Sensoren ist der USB Dongle BLED112 von Bluegiga
 	\label{fig:bled112}
 \end{figure}
 
-Die wichtigsten zu wissenden Details über den Bluegiga Dongle sind die folgenden:
-
-\begin{itemize}
-\itemsep 1pt \parskip 0pt \parsep 0pt
-\item Kommunikation erfolgt über serielle Schnittstelle. Dem BLED112 werden darüber einfach die enstprechenden Anweisungen gesendet.
-
-\item Material zu BLED112 (API Doku, Windows Treiber, Linux/Mac works out of the box) \url{https://www.bluegiga.com/en-US/products/bled112-bluetooth-smart-dongle/#documentation} → siehe im Speziellen API 1.3 Referenz
-
-
-\item Java-LIB, wo die BLED 112 API bereits implementiert ist: \url{https://github.com/SINTEF-9012/bglib}
-
-
-\item Ein paar Worte zum BLED112 selber:
-	\begin{itemize}
-	\itemsep 1pt \parskip 0pt \parsep 0pt
-	\item  Das Teil ist programmierbarer Mikrocontroller mit komplett implementiertem Bluetooth-Stack, verpackt als USB-Dongle (Dongle = das D im BLED112)
-
-	\item  Durch die Programmierung in Bluescript kann der Dongle unter anderem zu einem iBeacon gemacht werden.
-
-
-	\item  Theoretisch bietet er aber viel mehr an. Er ist nebenbei ein direktes Konkurrenzprodukt zum nRF51 Chip von Nordic, der auf dem Sming zum Einsatz kommt.
-	\end{itemize}
-
-
-\item Beispiel-Befehlsabfolge, wie sie beim Sming zum Einsatz kommt. Detailbeschrieb der Parameter siehe Bluegiga API 1.3 Doku. Die Parameter-Werte entsprechen denen im Demo-Script und sollten lauffähig sein:
-
-	\begin{itemize}
-	\itemsep 1pt \parskip 0pt \parsep 0pt
-	\item Suche nach BLE Advertisments
-		\begin{itemize}
-			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item bg.api.gapSetScanParameters(0xC8, 0xC8, 0)
-			\item bg.api.gapDiscover(1)
-		\end{itemize}
-
-	\item Wenn ein Device mit Name TXW51 gefunden, beende Suche kommt als Event mit Class = GenericAccessProfile siehe Demo-Script ab Zeile 238
-		\begin{itemize}
-			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item Suche beenden: bg.api.gapEndProcedure()
-		\end{itemize}
-	
-
-	\item Verbinde zum gefundenen Device anhand seiner MAC-Adresse
-		\begin{itemize}
-			\itemsep 1pt \parskip 0pt \parsep 0pt
-			\item bg.api.gapConnectDirect( <MAC-Addr>, 1, 60, 76, 100, 9)
-		\end{itemize}
-
-
-
-	\item Hole einfach mal komplette Handle-Liste der Bluetooth Attribute (Optimieriungspotential da)
-			\begin{itemize}
-				\itemsep 1pt \parskip 0pt \parsep 0pt
-				\item bg.api.attClientFindInformation( <connectionHandle>, 1, 0xffff)
-			\end{itemize}
-
-
-	\item Stimme die SMING UUIDs mit denen in der Handle-Liste überein. Merke zu jeder UUID deren Handle sowie UUID der CCID Attributes (siehe später)
-
-
-	\item Lese mit den entsprechenden Handle das Attribut (ich habe einfach mal jeweils immmer gerade mal alle eingelesen)
-			\begin{itemize}
-				\itemsep 1pt \parskip 0pt \parsep 0pt
-				\item bg.api.attClientReadByHandle(<connection>, <uuid handle> )
-			\end{itemize}
-
-
-	\item Zum Aktivieren der Accelometer-Messungen müssen folgende Attributte geschrieben werden:
-			\begin{itemize}
-				\itemsep 1pt \parskip 0pt \parsep 0pt
-				\item bg.api.attClientAttributeWrite( <connection>, <uuid handle>, <newValue>)
-				\item \url{LSM330_CHAR_GYRO_EN} = 1 
-				\item \url{LSM330_CHAR_ACC_EN} = 1 
-				\item \url{CCID UUID 0x02, 0x29 = 0x01, 0x00} ( Dies aktiviert das Bluetooth Feature CCID, wodruch das Sming bei Sming seitiger Attributwertänderung automatisch den neuen Wert sendet. Die Messwerte werden so per Push übertragen. Seitens Sming wird somit einfach der Messwert auf das Attribut \url{MEASURE_CHAR_DATASTREAM} geschrieben. Dies löst aus, dass der Bluetooth Stack des Smings automatisch den neue Messwert als Event zum Bluegiga Dongle übertragt und wir das so mitkriegen)
-				\item \url{MEASURE_CHAR_START} = 1
-			\end{itemize}
-
-
-	\item Das Lesen der Temperatur muss mit einem Polling auf Attribut \url{LSM330_CHAR_TEMP_SAMPLE} gemacht werden.
-
-	\item Beende Verbindung zum Sming
-			\begin{itemize}
-				\itemsep 1pt \parskip 0pt \parsep 0pt
-				\item bg.api.connectionDisconnect( <connection> )
-			\end{itemize}
-	\end{itemize}
-\end{itemize}
