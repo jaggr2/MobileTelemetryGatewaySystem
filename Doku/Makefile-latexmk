@@ -1,0 +1,43 @@
+# to use this file, rename it to 'Makefile'
+.PHONY: main.pdf all clean
+
+all: main.pdf
+
+# In case you didn't know, '$@' is a variable holding the name of the target,
+# and '$<' is a variable holding the (first) dependency of a rule.
+# "raw2tex" and "dat2tex" are just placeholders for whatever custom steps
+# you might have.
+
+%.md.tex: %.md
+	pandoc "$<"  --biblatex  -f markdown+implicit_figures+inline_notes \
+						--chapters --latex-engine=xelatex --parse-raw --smart  \
+						--to=latex+raw_tex  -o "$@"
+				
+markdown: 
+		@# convert markdown files to latex
+		@find . -type f -name "*.md"  -print0 | while IFS= read -r -d '' file; do \
+		echo $$file; \
+			dir=$$(dirname "$$file"); \
+			filename=$$(basename "$$file" .md); \
+			pandoc "$$file"  --biblatex  -f markdown+implicit_figures+inline_notes \
+					--chapters --latex-engine=xelatex --parse-raw --smart  \
+					--to=latex+raw_tex  -o "$$dir/$$filename.md.tex"; \
+		done
+
+
+# MAIN LATEXMK RULE
+
+# -pdf tells latexmk to generate PDF directly (instead of DVI).
+# -pdflatex="" tells latexmk to call a specific backend with specific options.
+# -use-make tells latexmk to call make for generating missing files.
+
+# -interactive=nonstopmode keeps the pdflatex backend from stopping at a
+# missing file reference and interactively asking you for an alternative.
+
+main.pdf: 
+	latexmk -g -pdf -pdflatex="pdflatex -interaction nonstopmode" -bibtex  -silent -use-make main.tex
+
+clean:
+	latexmk -C
+	-rm -f */*.md.tex
+	-rm -f main.{glg,gls,glo,bbl,gls,ist}
