@@ -1,4 +1,70 @@
-\chapter{BLE-I2C Bridge}
+\chapter{SMING}\label{sec:sming}
+Um weitere Sensoren einfach ohne Verdrahtung ins Messsystem aufzunehmen, setzen wir auf das Sming. Das Sming wurde durch Daniel Meer in seiner Master Thesis entwickelt. Er beschreibt in der Thesis das Sming wie folgt: \textit{Der TXW51 ist ein kleiner und energiesparender Sensorknoten, der als Basis für zukünftige Projekte verwendet werden kann. Er kommuniziert über Bluetooth Smart und enthält einen Sensor zur Messung der Beschleunigung. Die Firmware kann einfach für neue Anforderungen modifiziert werden.}\cite{meer:masterthesis}
+
+\begin{figure}[hbtp]
+	\center
+	\includegraphics[width=10cm]{bilder/foto-6.jpg}
+	\caption{Foto Sming mit Akku bestückt}
+	\label{fig:sming}
+\end{figure}
+
+Für unser Projekt ist vorallem die Erweiterbarkeit des Sming sehr interessant. Dies weil beliebige Senosoren über I2C angesprochen werden können.
+
+Hier nochmals die wichtigsten Eigenschaften:
+
+\begin{itemize}
+	\itemsep 1pt \parskip 0pt \parsep 0pt
+	\item Kommunikation über Bluetooth 4.0
+	\item Werte werden über BLE GATT gelesen und geschrieben 
+	\item Speziell wissenswert: Messungen werden per PUSH über Bluetooth CCID Feature gesendet, Details siehe Beschreibung BLED112
+	\item Bluetooth Device Name ist bei allen Smings von der BFH Burgdorf:  TXW51
+	\item Grundsätzlich sind die Attribute des SMINGS in drei Gruppen unterteilbar:
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item Beginnend mit \url{DEVICE_INFO}: diverse einfache Textfelder, die auch selber nach gutdünken beschrieben werden können.
+		\item Beginnend mit LSM330: Die entsprechenden Einstellung und Werte des LSM330-Sensors (Kombinierter Gyro-,Accelometer- und Temperatur-Sensor)
+		\item Beginnend mit MEASURE: Die entsprechenden Funktionen, um die asynchrone Messung via Bluetooth Push zu konfigurieren (Dauer), zu starten, zu stoppen und auch von Hand den letzten Messwert abzufragen.
+		
+	\end{itemize}
+	\item Tipp: Über das Demo-Tool von Bluegiga kann händisch mit dem SMING verbunden und Attribute gelesen/geschrieben werden.
+	
+	\item Messwert-Attribut: Zum Optimieren der Performance sind auf dem Messwert-Attribut oft bis zu drei Messwerte binär aneinandergereit vorhanden. Das Decodieren des Wertes wird im Demo-Script von Zeile 319 bis 345 gemacht.
+	
+	\item Java-Beispielcode für Kommunikation ist ebenfalls vorhanden,siehe gezippter Source der Demo-Android App von Daniel Meer auf Google Drive. Dort wird aber mit den Android Bluetooth Stack gearbeitet und nicht mit dem Bluegiga, weswegen sich das leider nicht ganz eins zu eins kopieren lässt. 
+	
+	\item Hinweis: das CCID wird von Android im Gegensatz zu Bluegiga als Funktion abstrahiert.
+\end{itemize}
+
+\subsection{Liste der wichtigsten Attribut UUIDs}
+\begin{lstlisting}
+DEVICE_INFO_SERVICE           : "8EDF0100-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_MANUFACTURER : "8EDF0101-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_MODEL        : "8EDF0102-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_SERIAL       : "8EDF0103-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_HW_REV       : "8EDF0104-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_FW_REV       : "8EDF0105-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_DEVICE_NAME  : "8EDF0106-67E5-DB83-F85B-A1E2AB1C9E7A",
+DEVICE_INFO_CHAR_SAVE_VALUES  : "8EDF0107-67E5-DB83-F85B-A1E2AB1C9E7A",
+
+LSM330_SERVICE           : "8EDF0200-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_ACC_EN       : "8EDF0201-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_GYRO_EN      : "8EDF0202-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_TEMP_SAMPLE  : "8EDF0203-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_ACC_FSCALE   : "8EDF0204-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_GYRO_FSCALE  : "8EDF0205-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_ACC_ODR      : "8EDF0206-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_GYRO_ODR     : "8EDF0207-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_TRIGGER_VAL  : "8EDF0208-67E5-DB83-F85B-A1E2AB1C9E7A",
+LSM330_CHAR_TRIGGER_AXIS : "8EDF0209-67E5-DB83-F85B-A1E2AB1C9E7A",
+
+MEASURE_SERVICE         : "8EDF0300-67E5-DB83-F85B-A1E2AB1C9E7A",
+MEASURE_CHAR_START      : "8EDF0301-67E5-DB83-F85B-A1E2AB1C9E7A",
+MEASURE_CHAR_STOP       : "8EDF0302-67E5-DB83-F85B-A1E2AB1C9E7A",
+MEASURE_CHAR_DURATION   : "8EDF0303-67E5-DB83-F85B-A1E2AB1C9E7A",
+MEASURE_CHAR_DATASTREAM : "8EDF0304-67E5-DB83-F85B-A1E2AB1C9E7A"
+\end{lstlisting}
+
+\section{BLE-I2C Bridge}
 \label{bleI2cBridge}
 
 Das Sming verfügt über den Erweiterungsheader die Möglichkeit I2C Sensoren anzusprechen. Um diese Funktion zu nutzen muss die Firmware des Smings erweitert werden. Dies ist nicht Straight-Forward weil für die Entwicklung in C und das Deployment auf den NRF51 spezielle Hardware und Software erforderlich ist. Um dieses Problem zu umgehen wurde die BLE-I2C Bridge entwickelt. Sie soll dazu dienen, dass vom IoT-Gateway via Sming I2C Sensoren und Aktoren angesprochen werden können. Somit muss für einen neuen Sensor die Firmware der Smings nicht angerührt werden. Dafür muss aber das IoT-Gateway programmiert werden. Dieses lässt sich aber je nach Gateway Typ leicht über Ethernet oder USB programmieren. Auch die Softwareentwicklung in JavaScript sollte denn meisten Entwickler in der Informatik Branche weniger schwer fallen als dies bei C der Fall ist.
