@@ -10,33 +10,35 @@ Um weitere Sensoren einfach ohne Verdrahtung ins Messsystem aufzunehmen, setzen 
 
 Für unser Projekt ist vorallem die Erweiterbarkeit des Sming sehr interessant. Dies weil beliebige Senosoren über I2C angesprochen werden können.
 
-Hier nochmals die wichtigsten Eigenschaften:
+Um die angepasste Firmware zu testen nutzen wir das von Bluegiga erhältlich BLE-Gui. Dies ermöglichte uns die Arbeit aufzuteilen, so dass auch ohne programmieren des Gateways die Änderungen an der Firmware getestet werden konnte. Um die bestehende Software zutesten war dies zum Teil aber nicht optimal, weil um einen höheren Datendurchsatz zu erreichen wurden die Messwerte des Beschleunigungssensor in einer Charakteristik zusammengefasst.
 
-\begin{itemize}
-	\itemsep 1pt \parskip 0pt \parsep 0pt
-	\item Kommunikation über Bluetooth 4.0
-	\item Werte werden über BLE GATT gelesen und geschrieben 
-	\item Speziell wissenswert: Messungen werden per PUSH über Bluetooth CCID Feature gesendet, Details siehe Beschreibung BLED112
-	\item Bluetooth Device Name ist bei allen Smings von der BFH Burgdorf:  TXW51
-	\item Grundsätzlich sind die Attribute des SMINGS in drei Gruppen unterteilbar:
-	\begin{itemize}
-		\itemsep 1pt \parskip 0pt \parsep 0pt
-		\item Beginnend mit \url{DEVICE_INFO}: diverse einfache Textfelder, die auch selber nach gutdünken beschrieben werden können.
-		\item Beginnend mit LSM330: Die entsprechenden Einstellung und Werte des LSM330-Sensors (Kombinierter Gyro-,Accelometer- und Temperatur-Sensor)
-		\item Beginnend mit MEASURE: Die entsprechenden Funktionen, um die asynchrone Messung via Bluetooth Push zu konfigurieren (Dauer), zu starten, zu stoppen und auch von Hand den letzten Messwert abzufragen.
+%Hier nochmals die wichtigsten Eigenschaften:
+
+%\begin{itemize}
+%	\itemsep 1pt \parskip 0pt \parsep 0pt
+%	\item Kommunikation über Bluetooth 4.0
+%	\item Werte werden über BLE GATT gelesen und geschrieben 
+%	\item Speziell wissenswert: Messungen werden per PUSH über Bluetooth CCID Feature gesendet, Details siehe Beschreibung BLED112
+%	\item Bluetooth Device Name ist bei allen Smings von der BFH Burgdorf:  TXW51
+%	\item Grundsätzlich sind die Attribute des SMINGS in drei Gruppen unterteilbar:
+%	\begin{itemize}
+%		\itemsep 1pt \parskip 0pt \parsep 0pt
+%		\item Beginnend mit \url{DEVICE_INFO}: diverse einfache Textfelder, die auch selber nach gutdünken beschrieben werden können.
+%		\item Beginnend mit LSM330: Die entsprechenden Einstellung und Werte des LSM330-Sensors (Kombinierter Gyro-,Accelometer- und Temperatur-Sensor)
+%		\item Beginnend mit MEASURE: Die entsprechenden Funktionen, um die asynchrone Messung via Bluetooth Push zu konfigurieren (Dauer), zu starten, zu stoppen und auch von Hand den letzten Messwert abzufragen.
 		
-	\end{itemize}
-	\item Tipp: Über das Demo-Tool von Bluegiga kann händisch mit dem SMING verbunden und Attribute gelesen/geschrieben werden.
+%	\end{itemize}
+%	\item Tipp: Über das Demo-Tool von Bluegiga kann händisch mit dem SMING verbunden und Attribute gelesen/geschrieben werden.
 	
-	\item Messwert-Attribut: Zum Optimieren der Performance sind auf dem Messwert-Attribut oft bis zu drei Messwerte binär aneinandergereit vorhanden. Das Decodieren des Wertes wird im Demo-Script von Zeile 319 bis 345 gemacht.
+%	\item Messwert-Attribut: Zum Optimieren der Performance sind auf dem Messwert-Attribut oft bis zu drei Messwerte binär aneinandergereit vorhanden. Das Decodieren des Wertes wird im Demo-Script von Zeile 319 bis 345 gemacht.
 	
-	\item Java-Beispielcode für Kommunikation ist ebenfalls vorhanden,siehe gezippter Source der Demo-Android App von Daniel Meer auf Google Drive. Dort wird aber mit den Android Bluetooth Stack gearbeitet und nicht mit dem Bluegiga, weswegen sich das leider nicht ganz eins zu eins kopieren lässt. 
+%	\item Java-Beispielcode für Kommunikation ist ebenfalls vorhanden,siehe gezippter Source der Demo-Android App von Daniel Meer auf Google Drive. Dort wird aber mit den Android Bluetooth Stack gearbeitet und nicht mit dem Bluegiga, weswegen sich das leider nicht ganz eins zu eins kopieren lässt. 
 	
-	\item Hinweis: das CCID wird von Android im Gegensatz zu Bluegiga als Funktion abstrahiert.
-\end{itemize}
+%	\item Hinweis: das CCID wird von Android im Gegensatz zu Bluegiga als Funktion abstrahiert.
+%\end{itemize}
 
 
-
+\clearpage
 \section{BLE-I2C Bridge}
 \label{bleI2cBridge}
 
@@ -49,11 +51,11 @@ Das Sming verfügt über den Erweiterungsheader die Möglichkeit I2C Sensoren an
     \label{fig:sming_mit_tmp06}
 \end{figure}
 
-
+\clearpage
 \section{Implementation}
 \label{bleI2cImplementation}
 
-Für die BLE-I2C Bridge wurde ein eigener BLE-Service aufgesetzt.
+Für die BLE-I2C Bridge wurde ein eigener BLE-Service aufgesetzt. Dieser wird in den nachfolgenden Tabellen beschrieben.
 
 %\begin{table}[h]
 %\centering
@@ -70,7 +72,7 @@ UUID	&    0x8EDF0500-67E5-DB83-F85B-A1E2AB1C9E7A  \\
 %\label{tab:bleI2cService}
 %\end{table}
 
-folgende Charakteristiken stehen bei diesem Service zur Verfügung:
+Folgende Charakteristiken stehen bei dem Service zur Verfügung:
 
 %\begin{table}[h]
 %\centering
