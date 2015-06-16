@@ -1,6 +1,9 @@
 \chapter{IoT Gateway}\label{chap:iotgateway}
 
-Unser Internet of Things Gateway besteht wiederum aus mehreren Teilen. Die einzelnen Sensoren werden entweder über den CAN-Bus oder an ein Sming angeschlossen. Der CAN-Bus wird von uns über ein BeagleBone Cape mitgelesen. Die Daten des Smings können wir ebenfalls auf dem BeagleBone empfangen. Dies erreichen wir mit Hilfe des Bluetooth Smart USB Dongle BLED112 von Bluegiga, welcher am BeagleBone angeschlossen wird.
+Das IoT Gateway dient dazu einzelne Messpunkte zusammen zufassen und die Daten danach ins Internet zu übertragen. Als Gateway Hardware nutzen wir die bekannte Embedded Platform Beagle Bone Black. Dies ermöglicht uns auch vorhandene Erweiterungen zu nutzen. Das Gateway arbeitet mit zwei verschiedenen Methoden um die einzelnen Messpunkte abfragen zu können. Einerseits dem CAN-Bus, welcher in der Automobiltechnik sehr verbreitet ist und anderseits eine Bluetooth Smart Schnittstelle um die Sming Messknoten ansprechen zu können. Die Übertragung ins Internet wird mithilfe eines UMTS-Routers gemacht.
+
+
+%Unser Internet of Things Gateway besteht wiederum aus mehreren Teilen. Die einzelnen Sensoren werden entweder über den CAN-Bus oder an ein Sming angeschlossen. Der CAN-Bus wird von uns über ein BeagleBone Cape mitgelesen. Die Daten des Smings können wir ebenfalls auf dem BeagleBone empfangen. Dies erreichen wir mit Hilfe des Bluetooth Smart USB Dongle BLED112 von Bluegiga, welcher am BeagleBone angeschlossen wird.
 
 \begin{figure}[hbtp]
     \center
@@ -10,7 +13,7 @@ Unser Internet of Things Gateway besteht wiederum aus mehreren Teilen. Die einze
 \end{figure}
 
 \section{Netmodule NetBox NB1600}\label{sec:netbox}
-Um die Verbindung zur Cloud zu ermöglichen, setzen wir die bereits vom Sming Projekte bekannte NetBox NB1600 ein. Für uns kommt sie als mobiler 3G/4G Router zum Einsatz.
+Als UMTS-Router setzen wir auf den Netmodule Router NB1600. Dieser kam schon in unserem Schwerpunkt Mobile Computing beim Semesterprojekt "Smoje" zum Einsatz. Für unseren Einsatzzweck als reine Bridge zwischen Ethernet und UMTS-Netz wird er nicht ausgelastet. Der NB1600 könnte nähmlich auch noch GPS empfangen und als Wlan-Hotspot dienen. Daher besteht hier noch eine Optimierungsmöglichkeit durch den Einsatz eines geigneten USB Dongles der direkt vom Beagle Bone aus auf UMTS zugreifen kann. Dieser zu evaluieren hätte aber den Zeitrahmen für das Projekt gesprengt.
 
 \begin{figure}[hbtp]
 	\center
@@ -20,45 +23,24 @@ Um die Verbindung zur Cloud zu ermöglichen, setzen wir die bereits vom Sming Pr
 \end{figure}
 
 
-\section{BeagleBone Black mit CAN-Cape}
-Als Basis für unsere Software kommt ein BeagleBone Black als Recheneinheit zum Einsatz. Zum Anschliessen der drei CAN-Busse des Fahrzeuges verwenden wir ein von einem Italiener gefertigtes CAN-Cape, dass einfach auf das Beaglebone drauf gesteckt werden kann:
+\section{CAN-Cape}
+%Als Basis für unsere Software kommt ein BeagleBone Black als Recheneinheit zum Einsatz. Zum Anschliessen der drei CAN-Busse des Fahrzeuges verwenden wir ein von einem Italiener gefertigtes CAN-Cape, dass einfach auf das Beaglebone drauf gesteckt werden kann:
+
+ Der CAN-Bus wird im Bern Formula Student Projekt genutzt um die Steuerbefehle innerhalb des Autos zu übertragen. Es werden drei seperate Verdrathungen geführt. Wir empfangen die Daten der 3 CAN-Busse über das Beagle Bone Black CAN Cape von Tower Tech. Da die ganze Steuerung des Autos über die CAN-Busse läuft haben wir nur lesenden Zugriff. Die Installationsanleitung zum Cape befindet sich im Anhang.
 
 \begin{figure}[hbtp]
 	\center
 	\includegraphics[width=\textwidth]{bilder/foto-4.jpg}
-	\caption{Foto BLED112}
-	\label{fig:bled112}
+	\caption{Foto CanCape auf Bealge Bone Black}
+	\label{fig:CanCape}
 \end{figure}
 
-\textbf{Installationsinstruktionen siehe Anhang.}
-
-\subsection{BeagleBone Hardware Spezifikation}
-\begin{itemize}
-	\itemsep 1pt \parskip 0pt \parsep 0pt
-	\item Prozessor:	AM335x 1GHz ARM® Cortex-A8
-	\item RAM:			512MB DDR3 RAM
-	\item HDD:			4GB 8-bit eMMC on-board flash storage
-	\item GPU:  		3D graphics accelerator + NEON floating-point accelerator
-	\item 2x PRU 32-bit microcontrollers
-	\item USB client for power and communications (Ethernet over USB)
-	\item USB host
-	\item Ethernet
-	\item HDMI
-	\item 2x 46 pin headers (GPIO, I2C, SPI, UART, CAN, etc.)
-	\item Betriebssysteme:
-	\begin{itemize}
-		\itemsep 1pt \parskip 0pt \parsep 0pt
-		\item Debian
-		\item Android
-		\item Ubuntu
-		\item Cloud9 IDE on Node.js w/ BoneScript library
-		\item plus jedes weitere ARM kompatible Betriebssystem
-	\end{itemize}		
-\end{itemize}
+%\textbf{Installationsinstruktionen siehe Anhang.}
 
 
 
 \section{BLED112}
+Die zweite Schnittstelle zu den Sensoren ist der USB Dongle BLED112 von Bluegiga. Dieser integriert den ganzen Bluetooth Smart Stack, der dank einer API über eine serielle Schnittstelle angesprochen werden kann.
 
 \begin{figure}[hbtp]
 	\center
@@ -154,70 +136,3 @@ Die wichtigsten zu wissenden Details über den Bluegiga Dongle sind die folgende
 			\end{itemize}
 	\end{itemize}
 \end{itemize}
-
-
-\chapter{SMING}\label{sec:sming}
-Um weitere Sensoren einfach ohne Verdrahtung ins Messsystem aufzunehmen, setzen wir auf das Sming. Das Sming wurde durch Daniel Meer in seiner Master Thesis entwickelt. Er beschreibt in der Thesis das Sming wie folgt: \textit{Der TXW51 ist ein kleiner und energiesparender Sensorknoten, der als Basis für zukünftige Projekte verwendet werden kann. Er kommuniziert über Bluetooth Smart und enthält einen Sensor zur Messung der Beschleunigung. Die Firmware kann einfach für neue Anforderungen modifiziert werden.}\cite{meer:masterthesis}
-
-\begin{figure}[hbtp]
-	\center
-	\includegraphics[width=10cm]{bilder/foto-6.jpg}
-	\caption{Foto Sming mit Akku bestückt}
-	\label{fig:sming}
-\end{figure}
-
-Für unser Projekt ist vorallem die Erweiterbarkeit des Sming sehr interessant. Dies weil beliebige Senosoren über I2C angesprochen werden können.
-
-Hier nochmals die wichtigsten Eigenschaften:
-
-\begin{itemize}
-	\itemsep 1pt \parskip 0pt \parsep 0pt
-	\item Kommunikation über Bluetooth 4.0
-	\item Werte werden über BLE GATT gelesen und geschrieben 
-	\item Speziell wissenswert: Messungen werden per PUSH über Bluetooth CCID Feature gesendet, Details siehe Beschreibung BLED112
-	\item Bluetooth Device Name ist bei allen Smings von der BFH Burgdorf:  TXW51
-	\item Grundsätzlich sind die Attribute des SMINGS in drei Gruppen unterteilbar:
-	\begin{itemize}
-		\itemsep 1pt \parskip 0pt \parsep 0pt
-		\item Beginnend mit \url{DEVICE_INFO}: diverse einfache Textfelder, die auch selber nach gutdünken beschrieben werden können.
-		\item Beginnend mit LSM330: Die entsprechenden Einstellung und Werte des LSM330-Sensors (Kombinierter Gyro-,Accelometer- und Temperatur-Sensor)
-		\item Beginnend mit MEASURE: Die entsprechenden Funktionen, um die asynchrone Messung via Bluetooth Push zu konfigurieren (Dauer), zu starten, zu stoppen und auch von Hand den letzten Messwert abzufragen.
-		
-	\end{itemize}
-	\item Tipp: Über das Demo-Tool von Bluegiga kann händisch mit dem SMING verbunden und Attribute gelesen/geschrieben werden.
-	
-	\item Messwert-Attribut: Zum Optimieren der Performance sind auf dem Messwert-Attribut oft bis zu drei Messwerte binär aneinandergereit vorhanden. Das Decodieren des Wertes wird im Demo-Script von Zeile 319 bis 345 gemacht.
-	
-	\item Java-Beispielcode für Kommunikation ist ebenfalls vorhanden,siehe gezippter Source der Demo-Android App von Daniel Meer auf Google Drive. Dort wird aber mit den Android Bluetooth Stack gearbeitet und nicht mit dem Bluegiga, weswegen sich das leider nicht ganz eins zu eins kopieren lässt. 
-	
-	\item Hinweis: das CCID wird von Android im Gegensatz zu Bluegiga als Funktion abstrahiert.
-\end{itemize}
-
-\subsection{Liste der wichtigsten Attribut UUIDs}
-\begin{lstlisting}
-DEVICE_INFO_SERVICE           : "8EDF0100-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_MANUFACTURER : "8EDF0101-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_MODEL        : "8EDF0102-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_SERIAL       : "8EDF0103-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_HW_REV       : "8EDF0104-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_FW_REV       : "8EDF0105-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_DEVICE_NAME  : "8EDF0106-67E5-DB83-F85B-A1E2AB1C9E7A",
-DEVICE_INFO_CHAR_SAVE_VALUES  : "8EDF0107-67E5-DB83-F85B-A1E2AB1C9E7A",
-
-LSM330_SERVICE           : "8EDF0200-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_ACC_EN       : "8EDF0201-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_GYRO_EN      : "8EDF0202-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_TEMP_SAMPLE  : "8EDF0203-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_ACC_FSCALE   : "8EDF0204-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_GYRO_FSCALE  : "8EDF0205-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_ACC_ODR      : "8EDF0206-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_GYRO_ODR     : "8EDF0207-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_TRIGGER_VAL  : "8EDF0208-67E5-DB83-F85B-A1E2AB1C9E7A",
-LSM330_CHAR_TRIGGER_AXIS : "8EDF0209-67E5-DB83-F85B-A1E2AB1C9E7A",
-
-MEASURE_SERVICE         : "8EDF0300-67E5-DB83-F85B-A1E2AB1C9E7A",
-MEASURE_CHAR_START      : "8EDF0301-67E5-DB83-F85B-A1E2AB1C9E7A",
-MEASURE_CHAR_STOP       : "8EDF0302-67E5-DB83-F85B-A1E2AB1C9E7A",
-MEASURE_CHAR_DURATION   : "8EDF0303-67E5-DB83-F85B-A1E2AB1C9E7A",
-MEASURE_CHAR_DATASTREAM : "8EDF0304-67E5-DB83-F85B-A1E2AB1C9E7A"
-\end{lstlisting}
