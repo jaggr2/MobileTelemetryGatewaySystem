@@ -43,6 +43,7 @@ static uint32_t SERV_DIS_AddChar(struct TXW51_SERV_DIS_Handle *serviceHandle,
                                  uint8_t *charValue,
                                  char *description,
                                  ble_gatts_char_handles_t *charHandle);
+static uint32_t SERV_DIS_AddChar_Timer(struct TXW51_SERV_DIS_Handle *serviceHandle);
 static uint32_t SERV_DIS_AddChar_SaveValues(struct TXW51_SERV_DIS_Handle *serviceHandle);
 
 /*----- Data -----------------------------------------------------------------*/
@@ -174,6 +175,9 @@ static void SERV_DIS_OnWrite(struct TXW51_SERV_DIS_Handle *handle,
     } else if (writeEvt->handle == handle->CharHandle_SaveValues.value_handle) {
         evt.EventType = TXW51_SERV_DIS_EVT_SAVE_VALUES;
 
+    }else if (writeEvt->handle == handle->CharHandle_DisableTimer.value_handle) {
+        evt.EventType = TXW51_SERV_DIS_EVT_DISABLE_TIMER;
+
     }
 
     if (evt.EventType != TXW51_SERV_DIS_EVT_UNKNOWN) {
@@ -261,6 +265,12 @@ static uint32_t SERV_DIS_AddAllChars(struct TXW51_SERV_DIS_Handle *serviceHandle
         return err;
     }
 
+
+    err = SERV_DIS_AddChar_Timer(serviceHandle);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
     return ERR_NONE;
 }
 
@@ -341,3 +351,36 @@ static uint32_t SERV_DIS_AddChar_SaveValues(struct TXW51_SERV_DIS_Handle *servic
                               &serviceHandle->CharHandle_SaveValues);
 }
 
+/***************************************************************************//**
+* @brief Adds the "Disable Timer" characteristic to the service.
+*
+* @param[in,out] serviceHandle The handle for the service.
+* @return ERR_NONE if no error occurred.
+*         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
+*                                            added.
+******************************************************************************/
+static uint32_t SERV_DIS_AddChar_Timer(struct TXW51_SERV_DIS_Handle *serviceHandle)
+{
+    struct TXW51_SERV_CharInit charInit;
+
+    /* Initialize characteristic. */
+    TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
+                      TXW51_SERV_DIS_UUID_CHAR_DISABLE_TIMER, &charInit);
+
+    /* Set up characteristic. */
+    charInit.Metadata.char_props.read  = 1;
+    charInit.Metadata.char_props.write = 1;
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.write_perm);
+
+    /*add_desc_user_description(&charInit, (uint8_t *)TXW51_SERV_DIS_STRING_CHAR_DISABLE_TIMER);*/
+
+    charInit.Attribute.init_len = 1;
+    charInit.Attribute.max_len  = 1;
+    charInit.Attribute.p_value = 0;
+
+    /* Add characteristic. */
+    return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
+                              &charInit,
+                              &serviceHandle->CharHandle_DisableTimer);
+}

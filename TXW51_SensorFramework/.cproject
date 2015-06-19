@@ -115,6 +115,7 @@
 							</tool>
 							<tool id="com.atollic.truestudio.exe.debug.toolchain.secoutput.739277178" name="Other" superClass="com.atollic.truestudio.exe.debug.toolchain.secoutput">
 								<option id="com.atollic.truestudio.secoutput.general.convert.704336986" name="Convert build output" superClass="com.atollic.truestudio.secoutput.general.convert" value="true" valueType="boolean"/>
+								<option id="com.atollic.truestudio.mbs.convert.1311611353" name="Format" superClass="com.atollic.truestudio.mbs.convert" value="com.atollic.truestudio.mbs.convert.hex" valueType="enumerated"/>
 							</tool>
 							<tool id="com.atollic.truestudio.ar.base.1620668298" name="Archiver" superClass="com.atollic.truestudio.ar.base"/>
 						</toolChain>

@@ -40,6 +40,7 @@
 #define TXW51_SERV_DIS_UUID_CHAR_FW_REV         ( 0x0105 )  /**< UUID address of the FW revision characteristic. */
 #define TXW51_SERV_DIS_UUID_CHAR_DEVICE_NAME    ( 0x0106 )  /**< UUID address of the device name characteristic. */
 #define TXW51_SERV_DIS_UUID_CHAR_SAVE_VALUES    ( 0x0107 )  /**< UUID address of the save values characteristic. */
+#define TXW51_SERV_DIS_UUID_CHAR_DISABLE_TIMER	( 0x0108 )  /**< UUID address of the disable Power Save Timer characteristic. */
 
 #define TXW51_SERV_DIS_STRING_CHAR_MANUFACTURER "Manufacturer"      /**< User description string for the manufacturer characteristic. */
 #define TXW51_SERV_DIS_STRING_CHAR_MODEL        "Model Name"        /**< User description string for the model name characteristic. */
@@ -48,6 +49,7 @@
 #define TXW51_SERV_DIS_STRING_CHAR_FW_REV       "Firmware Version"  /**< User description string for the FW revision characteristic. */
 #define TXW51_SERV_DIS_STRING_CHAR_DEVICE_NAME  "Device Name"       /**< User description string for the device name characteristic. */
 #define TXW51_SERV_DIS_STRING_CHAR_SAVE_VALUES  "Save Values"       /**< User description string for the save values characteristic. */
+#define TXW51_SERV_DIS_STRING_CHAR_DISABLE_TIMER "Disable Timer"    /**< User description string for disable Power Save Timer characteristic. */
 
 
 /******************************************************************************/
@@ -83,11 +85,13 @@
 #define TXW51_SERV_MEASURE_UUID_CHAR_STOP       ( 0x0302 )  /**< UUID address of the stop characteristic. */
 #define TXW51_SERV_MEASURE_UUID_CHAR_DURATION   ( 0x0303 )  /**< UUID address of the duration characteristic. */
 #define TXW51_SERV_MEASURE_UUID_CHAR_DATASTRAM  ( 0x0304 )  /**< UUID address of the data stream characteristic. */
+#define TXW51_SERV_MEASURE_UUID_CHAR_ADC  		( 0x0305 )  /**< UUID address of the ADC characteristic. */
 
 #define TXW51_SERV_MEASURE_STRING_CHAR_START        "Start Measurement"     /**< User description string for the start characteristic. */
 #define TXW51_SERV_MEASURE_STRING_CHAR_STOP         "Stop Measurement"      /**< User description string for the stop characteristic. */
 #define TXW51_SERV_MEASURE_STRING_CHAR_DURATION     "Set Measur. Duration"  /**< User description string for the duration characteristic. */
 #define TXW51_SERV_MEASURE_STRING_CHAR_DATASTREAM   "Read Data from Sensor" /**< User description string for the data stream characteristic. */
+#define TXW51_SERV_MEASURE_STRING_CHAR_ADC   		"Read ADC" 				/**< User description string for the ADC characteristic. */
 
 /******************************************************************************/
 /* Definitions for the contactless temperature Service.

@@ -49,5 +49,4 @@ extern uint32_t APPL_MEASUREMENT_InitService(struct TXW51_SERV_MEASURE_Handle *s
 extern void APPL_MEASUREMENT_SendAllData(enum TXW51_SERV_MEASURE_TxType txType);
 
 /*----- Data -----------------------------------------------------------------*/
-
 #endif /* TXW51_APPLICATION_MEASUREMENT_H_ */

@@ -35,7 +35,8 @@ enum TXW51_SERV_DIS_EventType {
     TXW51_SERV_DIS_EVT_UPDATE_HW_REV,       /**< Hardware revision string has been changed. */
     TXW51_SERV_DIS_EVT_UPDATE_FW_REV,       /**< Firmware revision string has been changed. */
     TXW51_SERV_DIS_EVT_UPDATE_DEVICE_NAME,  /**< Device name string has been changed. */
-    TXW51_SERV_DIS_EVT_SAVE_VALUES          /**< User wants the currents string to be saved. */
+    TXW51_SERV_DIS_EVT_SAVE_VALUES,         /**< User wants the currents string to be saved. */
+    TXW51_SERV_DIS_EVT_DISABLE_TIMER		/**< User deactivate power save mode. */
 };
 
 /**
@@ -71,6 +72,7 @@ struct TXW51_SERV_DIS_Init {
     uint8_t *String_HwRev;                      /**< Initial Hardware revision string. */
     uint8_t *String_FwRev;                      /**< Initial Firmware revision string. */
     uint8_t *String_DeviceName;                 /**< Initial Device name string. */
+    uint8_t *String_DisablePowerSave;			/**< Initial Device Power save mode */
 };
 
 /**
@@ -85,6 +87,7 @@ struct TXW51_SERV_DIS_Handle {
     ble_gatts_char_handles_t      CharHandle_FwRev;         /**< Handle of the Firmware revision characteristic. */
     ble_gatts_char_handles_t      CharHandle_DeviceName;    /**< Handle of the Device name characteristic. */
     ble_gatts_char_handles_t      CharHandle_SaveValues;    /**< Handle of the Save values characteristic. */
+    ble_gatts_char_handles_t	  CharHandle_DisableTimer;	/**< Handle of the Disable Timer characteristic. */
     TXW51_SERV_DIS_EventHandler_t EventHandler;             /**< Callback to the application. */
 };
 

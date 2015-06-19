@@ -38,11 +38,14 @@ static void SERV_MEASURE_OnHvc(struct TXW51_SERV_MEASURE_Handle *handle,
                                ble_evt_t *bleEvent);
 static void SERV_MEASURE_OnTxComplete(struct TXW51_SERV_MEASURE_Handle *handle,
                                       ble_evt_t *bleEvent);
+static void SERV_MEASURE_OnRwAuthRequest(struct TXW51_SERV_MEASURE_Handle *handle,
+										  ble_evt_t *bleEvent);
 static uint32_t SERV_MEASURE_AddAllChars(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
 static uint32_t SERV_MEASURE_AddChar_Start(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
 static uint32_t SERV_MEASURE_AddChar_Stop(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
 static uint32_t SERV_MEASURE_AddChar_Duration(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
 static uint32_t SERV_MEASURE_AddChar_DataStream(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
+static uint32_t SERV_MEASURE_AddChar_ADC(struct TXW51_SERV_MEASURE_Handle *serviceHandle);
 
 /*----- Data -----------------------------------------------------------------*/
 
@@ -102,6 +105,10 @@ void TXW51_SERV_MEASURE_OnBleEvent(struct TXW51_SERV_MEASURE_Handle *handle,
 
         case BLE_EVT_TX_COMPLETE:
             SERV_MEASURE_OnTxComplete(handle, bleEvent);
+            break;
+
+        case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
+            SERV_MEASURE_OnRwAuthRequest(handle, bleEvent);
             break;
 
         default:
@@ -277,6 +284,11 @@ static uint32_t SERV_MEASURE_AddAllChars(struct TXW51_SERV_MEASURE_Handle *servi
         return err;
     }
 
+    err = SERV_MEASURE_AddChar_ADC(serviceHandle);
+    if (err != ERR_NONE) {
+        return err;
+    }
+
     return ERR_NONE;
 }
 
@@ -429,6 +441,92 @@ static uint32_t SERV_MEASURE_AddChar_DataStream(struct TXW51_SERV_MEASURE_Handle
                               &serviceHandle->CharHandle_DataStream);
 }
 
+/***************************************************************************//**
+* @brief Adds the "ADC" characteristic to the service.
+*
+* @param[in,out] serviceHandle The handle for the service.
+* @return ERR_NONE if no error occurred.
+*         ERR_BLE_SERVICE_ADD_CHARACTERISTIC if characteristic could not be
+*                                            added.
+******************************************************************************/
+static uint32_t SERV_MEASURE_AddChar_ADC(struct TXW51_SERV_MEASURE_Handle *serviceHandle)
+{
+    struct TXW51_SERV_CharInit charInit;
+
+    /* Initialize characteristic. */
+    TXW51_SERV_InitChar(&serviceHandle->ServiceHandle,
+						TXW51_SERV_MEASURE_UUID_CHAR_ADC,
+                        &charInit);
+
+    /* Set up characteristic. */
+    charInit.Metadata.char_props.read  = 1;
+    charInit.Metadata.char_props.write = 1;
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.read_perm);
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&charInit.AttrMetadata.write_perm);
+
+    charInit.AttrMetadata.rd_auth = 1;
+
+    /*add_desc_user_description(&charInit, (uint8_t *)SERVICE_I2C_STRING_CHAR_REGISTER_VALUE);*/
+
+    charInit.Attribute.init_len = 1;
+    charInit.Attribute.max_len  = 1;
+    charInit.Attribute.p_value  = 0;
+
+    /* Add characteristic. */
+    return TXW51_SERV_AddChar(&serviceHandle->ServiceHandle,
+                              &charInit,
+                              &serviceHandle->CharHandle_ADC);
+}
+
+/***************************************************************************//**
+* @brief Handles the read/write authorization request.
+*
+* Detects which characteristic has been read, notifies the application and
+* allows the request. This can be used to act on characteristics reads.
+*
+* @param[in,out] handle   The handle for the service.
+* @param[in]     bleEvent The BLE event that occurred.
+* @return Nothing.
+******************************************************************************/
+void SERV_MEASURE_OnRwAuthRequest(struct TXW51_SERV_MEASURE_Handle *handle,
+                                 ble_evt_t *bleEvent)
+{
+    ble_gatts_evt_rw_authorize_request_t *authRequest = &bleEvent->evt.gatts_evt.params.authorize_request;
+
+    TXW51_LOG_DEBUG("[MEASURE Service] SERV_MEASURE_OnRwAuthRequest");
+
+    if (handle->EventHandler != NULL) {
+        struct TXW51_SERV_MEASURE_Event evt;
+
+        if ((authRequest->type = BLE_GATTS_AUTHORIZE_TYPE_READ) &&
+            (authRequest->request.read.handle == handle->CharHandle_ADC.value_handle)) {
+            uint32_t err;
+
+            /* Handle event. */
+            uint8_t tempValue = 0;
+            evt.EventType = TWX51_SERV_MEASURE_EVT_ADC;
+            evt.Value = &tempValue;
+            handle->EventHandler(handle, &evt);
+
+
+            TXW51_LOG_DEBUG("[MEASURE Service] MEASURE Value Read Event");
+
+            /* Reply to peer. */
+            ble_gatts_rw_authorize_reply_params_t reply;
+            reply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
+            reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
+            reply.params.read.p_data = &tempValue;
+            reply.params.read.len = 1;
+            reply.params.read.update = 1;
+            reply.params.read.offset = 0;
+
+            err = sd_ble_gatts_rw_authorize_reply(bleEvent->evt.gatts_evt.conn_handle, &reply);
+            if (err != NRF_SUCCESS) {
+                TXW51_LOG_WARNING("[MEASURE Service] Error MEASURE Value Read!");
+            }
+        }
+    }
+}
 
 uint32_t TXW51_SERV_MEASURE_SendData(enum TXW51_SERV_MEASURE_TxType txType,
                                      struct TXW51_SERV_MEASURE_Handle *handle,

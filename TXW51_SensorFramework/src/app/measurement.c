@@ -17,6 +17,7 @@
 #include "measurement.h"
 
 #include "txw51_framework/utils/log.h"
+#include "txw51_framework/hw/adc.h"
 
 #include "app/appl.h"
 #include "app/error.h"
@@ -30,6 +31,8 @@
 /*----- Function prototypes --------------------------------------------------*/
 static void MEASUREMENT_BleEventHandler(struct TXW51_SERV_MEASURE_Handle *handle,
                                         struct TXW51_SERV_MEASURE_Event *evt);
+
+static void MEASURMENT_Read_ADC(uint8_t* value);
 
 /*----- Data -----------------------------------------------------------------*/
 static struct TXW51_SERV_MEASURE_Handle *measurementServiceHandle = NULL;   /**< Reference to the handle for the Bluetooth Smart Measurement Service. */
@@ -55,6 +58,14 @@ uint32_t APPL_MEASUREMENT_InitService(struct TXW51_SERV_MEASURE_Handle *serviceH
     }
 
     measurementServiceHandle = serviceHandle;
+
+    struct TXW51_ADC_InitTab init = {
+        .RefSelection   = ADC_CONFIG_REFSEL_SupplyOneThirdPrescaling,
+        .InputSelection = ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling,
+        .Resolution     = ADC_CONFIG_RES_8bit
+    };
+    TXW51_ADC_Init(&init);
+
     return ERR_NONE;
 }
 
@@ -113,6 +124,10 @@ static void MEASUREMENT_BleEventHandler(struct TXW51_SERV_MEASURE_Handle *handle
             notificationPacketCount += *evt->Value;
             break;
 
+        case TWX51_SERV_MEASURE_EVT_ADC:
+        	MEASURMENT_Read_ADC(evt->Value);
+            break;
+
         default:
             break;
     }
@@ -163,3 +178,20 @@ void APPL_MEASUREMENT_SendAllData(enum TXW51_SERV_MEASURE_TxType txType)
                                 &packet);
 }
 
+void MEASURMENT_Read_ADC(uint8_t* value)
+{
+	NRF_ADC->TASKS_START = 1U;
+	while(NRF_ADC->BUSY);
+	NRF_ADC->EVENTS_END = 0;
+
+	/* Use the STOP task to save current. Workaround for PAN_028 rev1.5 anomaly 1. */
+	NRF_ADC->TASKS_STOP = 1U;
+
+	uint8_t result = NRF_ADC->RESULT;
+
+	char outputBuffer[20];
+	snprintf(outputBuffer, 21, "%s %u", "Result:", result);
+	TXW51_LOG_DEBUG(outputBuffer);
+
+	*value = result;
+}

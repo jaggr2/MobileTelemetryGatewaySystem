@@ -23,6 +23,7 @@
 
 #include "app/appl.h"
 #include "app/error.h"
+#include "app/device_info.h"
 
 /*----- Macros ---------------------------------------------------------------*/
 #define APPL_TIMER_INTERRUPT_MODE       ( APP_TIMER_MODE_SINGLE_SHOT )  /**< Sets the timer to single shot or repeated mode. */
@@ -79,6 +80,11 @@ uint32_t APPL_TIMER_Start(void)
 {
     uint32_t err;
 
+    if (APPL_DEVINFO_IsPowerSaveDisabled())
+    {
+    	return ERR_NONE;
+    }
+
     err = app_timer_start(timerHandle, APPL_TIMER_TIMEOUT_TICKS, NULL);
     if (err != NRF_SUCCESS) {
         TXW51_LOG_ERROR("[Timer] Could not start timeout timer.");
@@ -93,6 +99,12 @@ uint32_t APPL_TIMER_Start(void)
 uint32_t APPL_TIMER_Stop(void)
 {
     uint32_t err;
+
+
+    if (APPL_DEVINFO_IsPowerSaveDisabled())
+    {
+    	return ERR_NONE;
+    }
 
     err = app_timer_stop(timerHandle);
     if (err != NRF_SUCCESS) {
