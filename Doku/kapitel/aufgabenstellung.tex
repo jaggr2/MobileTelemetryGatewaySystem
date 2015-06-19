@@ -1,21 +1,65 @@
 \chapter{Aufgabenstellung}
 \label{chap:aufgabenstellung}
 
-Von Seiten Bern Formula Student wurden folgende Zielvorstellungen an die Telemetrie formuliert:
+%Als primäre Aufgabe wurden die Anforderungen des Bern Formula Student Teams wie folgt definiert: 
+
+Von Seiten Bern Formula Student wurde folgende Zielvorstellung an die Telemetrie formuliert:
+
+\textit{Grundsätzlich sollen möglichst alle Daten übermittelt werden, welche auf den drei CAN-Bus-Systemen des Fahrzeuges übertragen werden.} 
+
+Zusätzlich wurden weitere Messpunkte definiert, welche über die Smings übermittelt werden sollen.
+
+%Zum jetzigen Zeitpunkt sind dies:
+Folgende Messpunkte sollen übermittelt werden:
 
 \begin{itemize}
-\itemsep 1pt \parskip 0pt \parsep 0pt
-\item Übermitteln möglichst aller Daten, die auf den drei CAN-Bus-Systemen des Fahrzeuges übertragen werden. Übertragene Informationen sind beispielsweise Beschleunigung, Bremsstärke, Lenkeinschlag, Geschwindig, diverse Temperaturwerte, Drehzahlen der Motoren, etc.
-
-\item Erfassen von zusätzlichen Temperaturwerten wie beispielsweise Kühlluft-Eingangs sowie Ausgangstemperatur. Dafür werden kontaktlose Temperatursensoren benötigt, die auf einen schwarz markierten Referenzpunkt gerichtet werden.
-
+	\itemsep 1pt \parskip 0pt \parsep 0pt
+	\item \textbf{Eingangsgrössen Fahrer}		
+		\begin{itemize}
+			\itemsep 1pt \parskip 0pt \parsep 0pt
+			\item Fahrpedalstellung		\textit{CAN 1}
+			\item Bremspedalstellung	\textit{CAN 1}
+			\item Bremsdruck			\textit{CAN 1}
+			\item Lenkwinkel			\textit{CAN 1}
+		\end{itemize}
+	\item \textbf{Motor und Kühlsystem}		
+		\begin{itemize}
+			\itemsep 1pt \parskip 0pt \parsep 0pt
+			\item Soll-Moment			\textit{CAN 2/3}
+			\item Ist-Moment			\textit{CAN 2/3}
+			\item Soll-Drehzahl			\textit{CAN 2/3}
+			\item Ist-Drehzahl			\textit{CAN 2/3}
+			\item Motortemperatur		\textit{CAN 2/3}
+			\item Kühlmitteltemperatur	\textit{CAN 1}
+		\end{itemize}		
+	\item \textbf{Batterie}		
+		\begin{itemize}
+			\itemsep 1pt \parskip 0pt \parsep 0pt
+			\item HV-Spannung				\textit{CAN 1}
+			\item HV-Stromg					\textit{CAN 1}
+			\item HV-Batterie Ladestand		\textit{CAN 1}
+			\item GLV Batterie Spannung		\textit{Wireless über Sming}
+		\end{itemize}
+					
+	\item \textbf{Fahrzeug}		
+	\begin{itemize}
+		\itemsep 1pt \parskip 0pt \parsep 0pt
+		\item Geschwindigkeit						\textit{CAN 1}
+		\item Beschleunigung						\textit{CAN 1}
+		\item Drehrate 								\textit{CAN 1}
+		\item Reifentemperatur						\textit{Wireless über Sming}
+		\item Bremstemperatur						\textit{Wireless über Sming}
+		\item Bodentemperatur						\textit{Wireless über Sming}
+		\item Lufttempertur bei Kühlereintritt		\textit{Wireless über Sming}
+		\item Lufttempertur bei Kühleraustritt		\textit{Wireless über Sming}
+		\item Dämpferweg (optional)					\textit{Wireless über Sming}
+		
+	\end{itemize}			
 \end{itemize}
 
-Erweitert wurde die Aufgabenstellung von Andreas Danuser durch folgende Konstruktionsvorgaben:
 
-\begin{itemize}
-\itemsep 1pt \parskip 0pt \parsep 0pt
-\item Die einzelnen Komponenten der Telemterie sollen möglichst universell , sprich auch in einem komplett anderen Einsatzzweck, verwendbar sein.
-\item Das System soll modular aufgebaut werden.
+Die Anbindung "Wireless über Sming" sind die Messpunkte bei welchen von unserer Seite Sensoren evaluiert werden welche ans Sming angschlossen werden können.
+%Die Anbindung "Wireless über Sming" bedeutet, dass wir selber Sensoren zur Erfassung der gewünschten Messgrössen liefern sollen. Die Sensoren sollen dabei drahtlos über den Bluetooth-Stack des Smings kommunizieren.
 
-\end{itemize}
+Erweitert wurde die Aufgabenstellung von Andreas Danuser durch die Konstruktionsvorgabe, dass die einzelnen Komponenten der Telemetrie möglichst universell, sprich als eigenständiges Modul auch in einem komplett anderen Einsatzzweck verwendbar sein sollen.
+

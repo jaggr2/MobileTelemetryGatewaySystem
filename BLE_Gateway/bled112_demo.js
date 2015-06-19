@@ -851,8 +851,6 @@ function decorateSmingFunctionality(gateway) {
 
                         var index = 2 + j * 6;
 
-                        if(!theRemoteDevice.accFscaleMultiplikator) theRemoteDevice.accFscaleMultiplikator = 0.061;
-
                         var sample = { sequenceNumber: sequenceNumber,
                             point: [  buffer.readInt16LE(index) * theRemoteDevice.accFscaleMultiplikator, // X-Achse
                                     buffer.readInt16LE(index + 2) * theRemoteDevice.accFscaleMultiplikator,    // Y-Achse
@@ -896,17 +894,17 @@ function decorateSmingFunctionality(gateway) {
                         return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_GYRO_EN error", theRemoteDevice.mac));
                     }
 
-                    theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_FSCALE', new Buffer([4]), function(err, command, result) {
+                    theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_EN', new Buffer([1]), function(err, command, result) {
 
                         if(err) {
-                            return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
+                            return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_EN error", theRemoteDevice.mac));
                         }
 
 
-                        theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_EN', new Buffer([1]), function(err, command, result) {
+                        theRemoteDevice.writeGATTAttribute('LSM330_CHAR_ACC_FSCALE', new Buffer([4]), function(err, command, result) {
 
                             if (err) {
-                                return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_EN error", theRemoteDevice.mac));
+                                return callback(new VError(err, "btRemoteDevice %s read LSM330_CHAR_ACC_FSCALE error", theRemoteDevice.mac));
                             }
 
                             //  gateway.commandQueue.addCommand(new bgCommand.bgCommand(bg.api.attClientAttributeWrite, [connectionHandle, theClient.ccidHandle, new Buffer([0x01, 0x00])]), 30000,
@@ -946,7 +944,7 @@ function decorateSmingFunctionality(gateway) {
                                     }
 
                                     console.log("Device ", theRemoteDevice.mac, " Accolemeter", result.readData.value, " Max: " + theRemoteDevice.accMessbereichInG + "G", "Min: " + theRemoteDevice.accFscaleMultiplikator + "mG");
-                                    mqttClient.publish('/sming/' + theRemoteDevice.mac + '/accelometerMaxG', theRemoteDevice.accMessbereichInG);
+                                    mqttClient.publish('/sming/' + theRemoteDevice.mac + '/accelometer', " Max: " + theRemoteDevice.accMessbereichInG + "G / Min: " + theRemoteDevice.accFscaleMultiplikator + "mG");
 
 
                                     theRemoteDevice.writeGATTAttribute('MEASURE_CHAR_START', new Buffer([1]), function (err, command, result) {
