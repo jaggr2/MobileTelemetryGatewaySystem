@@ -59,7 +59,8 @@ enum TXW51_SERV_MEASURE_EventType {
     TXW51_SERV_MEASURE_EVT_ENABLE_DATASTREAM,   /**< CCCD for data streaming has been set. */
     TXW51_SERV_MEASURE_EVT_DISABLE_DATASTREAM,  /**< CCCD for data streaming has been unset. */
     TXW51_SERV_MEASURE_EVT_INDICATION_RECEIVED, /**< The indication has been received by the peer device. */
-    TXW51_SERV_MEASURE_EVT_NOTIFICATIONS_SENT   /**< The notification has been sent (no guarantee of receiving). */
+    TXW51_SERV_MEASURE_EVT_NOTIFICATIONS_SENT,  /**< The notification has been sent (no guarantee of receiving). */
+    TWX51_SERV_MEASURE_EVT_ADC					/**< Get Value from ADC */
 };
 
 /**
@@ -100,6 +101,7 @@ struct TXW51_SERV_MEASURE_Handle {
     ble_gatts_char_handles_t    CharHandle_Stop;        /**< Handle of the Stop characteristic. */
     ble_gatts_char_handles_t    CharHandle_Duration;    /**< Handle of the Duration characteristic. */
     ble_gatts_char_handles_t    CharHandle_DataStream;  /**< Handle of the Data Stream characteristic. */
+    ble_gatts_char_handles_t    CharHandle_ADC;  		/**< Handle of the ADC characteristic. */
     TXW51_SERV_MEASURE_EventHandler_t EventHandler;     /**< Callback to the application. */
 };
 

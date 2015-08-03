@@ -32,7 +32,7 @@
  * @brief Length of the buffer with the information values.
  */
 #define APPL_DEVINFO_INFO_BUFFER_LENGTH     ( APPL_DEVINFO_NUM_OF_ENTRIES * \
-                                              APPL_DEVINFO_ENTRY_LENGHT )
+                                              APPL_DEVINFO_ENTRY_LENGHT)
 
 /**
  * @brief Length of the buffer to display one information entry on the log.
@@ -62,6 +62,7 @@ static bool isOperationPending = false;     /**< Flag to indicate when a flash o
  * @brief Buffer to hold the device information.
  */
 static uint8_t deviceInfo[APPL_DEVINFO_NUM_OF_ENTRIES][APPL_DEVINFO_ENTRY_LENGHT];
+static uint8_t Flags [APPL_DEVINFO_FLAG_LENGTH ];
 
 /**
  * @brief Prefixes to use before printing the device information to the log.
@@ -93,7 +94,7 @@ uint32_t APPL_DEVINFO_Init(void)
 
     pstorage_module_param_t storageParams = {
         .cb = DEVINFO_CallbackHandler,
-        .block_size = APPL_DEVINFO_INFO_BUFFER_LENGTH,
+        .block_size = APPL_DEVINFO_INFO_BUFFER_LENGTH + APPL_DEVINFO_FLAG_LENGTH,	//Add Flag for Power Save Mode
         .block_count = 1
     };
 
@@ -163,13 +164,14 @@ static void DEVINFO_CallbackHandler(pstorage_handle_t *handle,
 uint32_t APPL_DEVINFO_Load(void)
 {
     uint32_t err;
-
     if (isOperationPending) {
         return ERR_DEVINFO_OPERATION_PENDING;
     }
 
+
     isOperationPending = true;
     err = pstorage_load(deviceInfo[0], &storageHandle, APPL_DEVINFO_INFO_BUFFER_LENGTH, 0);
+    err = pstorage_load(Flags, &storageHandle, APPL_DEVINFO_FLAG_LENGTH, APPL_DEVINFO_INFO_BUFFER_LENGTH );
     if (err != NRF_SUCCESS) {
         TXW51_LOG_ERROR("[DevInfo] Device information could not be loaded.");
         return ERR_DEVINFO_FLASH_LOAD_FAILED;
@@ -191,6 +193,16 @@ uint32_t APPL_DEVINFO_PrintValues(void)
         snprintf(outputBuffer, APPL_DEVINFO_OUTPUT_BUFFER_LENGTH, "%s %s", names[i], deviceInfo[i]);
         TXW51_LOG_INFO(outputBuffer);
     }
+    if (Flags[0] & APPL_DEVINFO_FLAG_POWER_SAVE_DIS)
+    {
+        snprintf(outputBuffer, APPL_DEVINFO_OUTPUT_BUFFER_LENGTH, "%s %s", "Power Save Mode: ", "OFF");
+        TXW51_LOG_INFO(outputBuffer);
+    }
+    else
+    {
+        snprintf(outputBuffer, APPL_DEVINFO_OUTPUT_BUFFER_LENGTH, "%s %s", "Power Save Mode: ", "ON");
+        TXW51_LOG_INFO(outputBuffer);
+    }
 
     return ERR_NONE;
 }
@@ -206,6 +218,7 @@ uint32_t APPL_DEVINFO_Save(void)
 
     isOperationPending = true;
     err = pstorage_update(&storageHandle, deviceInfo[0], APPL_DEVINFO_INFO_BUFFER_LENGTH, 0);
+    err = pstorage_update(&storageHandle, Flags, APPL_DEVINFO_FLAG_LENGTH, APPL_DEVINFO_INFO_BUFFER_LENGTH);
     if (err != NRF_SUCCESS) {
         TXW51_LOG_ERROR("[DevInfo] Device information could not be saved.");
         return ERR_DEVINFO_FLASH_SAVE_FAILED;
@@ -246,6 +259,15 @@ uint32_t APPL_DEVINFO_IsBusy(void)
     return count;
 }
 
+bool APPL_DEVINFO_IsPowerSaveDisabled(void)
+{
+    if (Flags[0] & APPL_DEVINFO_FLAG_POWER_SAVE_DIS)
+    {
+    	return true;
+    }
+
+    return false;
+}
 
 void APPL_DEVINFO_SetDefaultValues(void)
 {
@@ -279,6 +301,7 @@ uint32_t APPL_DEVINFO_InitService(struct TXW51_SERV_DIS_Handle *serviceHandle)
     disInit.String_HwRev        = deviceInfo[APPL_DEVINFO_VALUE_HW_REV];
     disInit.String_FwRev        = deviceInfo[APPL_DEVINFO_VALUE_FW_REV];
     disInit.String_DeviceName   = deviceInfo[APPL_DEVINFO_VALUE_DEVICE_NAME];
+    disInit.String_DisablePowerSave  = deviceInfo[APPL_DEVINFO_VALUE_POWER_SAVE];
 
     err = TXW51_SERV_DIS_Init(serviceHandle, &disInit);
     if (err != ERR_NONE) {
@@ -329,6 +352,19 @@ static void DEVINFO_BleEventHandler(struct TXW51_SERV_DIS_Handle *handle,
         case TXW51_SERV_DIS_EVT_SAVE_VALUES:
             TXW51_LOG_INFO("[DIS Service] Save values to flash");
             APPL_DEVINFO_Save();
+            break;
+        case TXW51_SERV_DIS_EVT_DISABLE_TIMER:
+            TXW51_LOG_INFO("[DIS Service] Update disable timer");
+            if (evt->Value[0])
+            {
+            	Flags[0] |= APPL_DEVINFO_FLAG_POWER_SAVE_DIS;
+                TXW51_LOG_INFO("Power Save Mode: OFF");
+            }
+            else
+            {
+            	Flags[0] &= ~APPL_DEVINFO_FLAG_POWER_SAVE_DIS;
+                TXW51_LOG_INFO("Power Save Mode: ON");
+            }
             break;
         default:
             break;

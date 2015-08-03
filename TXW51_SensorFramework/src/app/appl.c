@@ -33,6 +33,7 @@
 #include "app/timer.h"
 #include "app/contactless_temp.h"
 #include "app/i2cBridge.h"
+#include "app/adc_example.h"
 
 /*----- Macros ---------------------------------------------------------------*/
 
@@ -158,6 +159,8 @@ static void APPL_Init(void)
     APPL_I2C_BRIDGE_InitService(&serviceHandleI2c);
     TXW51_BLE_InitAdvertising();
 
+    //APPL_ADC_EXMPL_Init();
+    //APPL_ADC_EXMPL_Start();
     TXW51_LOG_INFO("Initialization successful!");
 }
 

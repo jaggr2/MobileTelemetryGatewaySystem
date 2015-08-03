@@ -35,7 +35,7 @@ uint32_t APPL_ADC_EXMPL_Init(void)
     uint32_t err;
 
     struct TXW51_ADC_InitTab init = {
-        .RefSelection   = ADC_CONFIG_REFSEL_External,
+        .RefSelection   = ADC_CONFIG_REFSEL_SupplyOneThirdPrescaling,
         .InputSelection = ADC_CONFIG_INPSEL_AnalogInputOneThirdPrescaling,
         .Resolution     = ADC_CONFIG_RES_8bit
     };

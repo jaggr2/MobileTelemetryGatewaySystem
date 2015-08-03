@@ -29,9 +29,9 @@
 void TXW51_ADC_Init(const struct TXW51_ADC_InitTab *init)
 {
     /* Enable interrupt on ADC sample ready event. */
-    NRF_ADC->INTENSET = ADC_INTENSET_END_Msk;
-    sd_nvic_SetPriority(ADC_IRQn, TXW51_ADC_IRQ_PRIORITY);
-    sd_nvic_EnableIRQ(ADC_IRQn);
+    //NRF_ADC->INTENSET = ADC_INTENSET_END_Msk;
+    //sd_nvic_SetPriority(ADC_IRQn, TXW51_ADC_IRQ_PRIORITY);
+    //sd_nvic_EnableIRQ(ADC_IRQn);
 
     /* Configure ADC. */
     uint32_t bits = (TXW51_ADC_PIN_SELECTION << ADC_CONFIG_PSEL_Pos) |

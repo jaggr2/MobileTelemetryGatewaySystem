@@ -24,6 +24,7 @@
 /*----- Macros ---------------------------------------------------------------*/
 #define APPL_DEVINFO_NUM_OF_ENTRIES     ( 6 )   /**< Number of device information entries. */
 #define APPL_DEVINFO_ENTRY_LENGHT       ( 32 )  /**< Maximal length of a device information entry (has to be a multiple of 4). */
+#define APPL_DEVINFO_FLAG_LENGTH		( 4 )   /**< length of DeviceInfo Flags (has to be a multiple of 4). */
 
 #define APPL_DEVINFO_DEFAULT_MANUFACTURER   "Berner FH"     /**< Default manufacturer entry. */
 #define APPL_DEVINFO_DEFAULT_MODEL          "TXW51"         /**< Default model name entry. */
@@ -31,6 +32,8 @@
 #define APPL_DEVINFO_DEFAULT_HW_REV         "1.0"           /**< Default hardware revision entry. */
 #define APPL_DEVINFO_DEFAULT_FW_REV         "1.0"           /**< Default firmware revision entry. */
 #define APPL_DEVINFO_DEFAULT_DEVICE_NAME    "Jack"          /**< Default device name entry. */
+
+#define APPL_DEVINFO_FLAG_POWER_SAVE_DIS	0x01			/**< Flag to disable Power Save Mode */
 
 /*----- Data types -----------------------------------------------------------*/
 /**
@@ -42,7 +45,8 @@ enum appl_devinfo_value {
     APPL_DEVINFO_VALUE_SERIAL       = 2,    /**< The serial number. */
     APPL_DEVINFO_VALUE_HW_REV       = 3,    /**< The hardware revision. */
     APPL_DEVINFO_VALUE_FW_REV       = 4,    /**< The firmware revision. */
-    APPL_DEVINFO_VALUE_DEVICE_NAME  = 5     /**< The device name. */
+    APPL_DEVINFO_VALUE_DEVICE_NAME  = 5,    /**< The device name. */
+    APPL_DEVINFO_VALUE_POWER_SAVE	= 6		/**< Flag if Power save mode is disabled. */
 };
 
 /*----- Function prototypes --------------------------------------------------*/
@@ -131,6 +135,16 @@ extern void APPL_DEVINFO_SetDefaultValues(void);
  *         ERR_BLE_SERVICE_INIT_FAILED if service initialization failed.
  ******************************************************************************/
 extern uint32_t APPL_DEVINFO_InitService(struct TXW51_SERV_DIS_Handle *serviceHandle);
+
+/***************************************************************************//**
+ * @brief Ask if Power Save Mode is deactivated
+ *
+ * @return ERR_NONE if no error occurred.
+ *         ERR_DEVINFO_OPERATION_PENDING if already another flash operation is
+ *                                       pending.
+ *         ERR_DEVINFO_FLASH_LOAD_FAILED if values could not be read from flash.
+ ******************************************************************************/
+extern bool APPL_DEVINFO_IsPowerSaveDisabled(void);
 
 /*----- Data -----------------------------------------------------------------*/
 
