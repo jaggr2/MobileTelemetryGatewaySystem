@@ -46,23 +46,12 @@ var Adafruit_TMP006 = function(i2cAddr, SampleRate) {
     self.i2cAddr = i2cAddr || tmp006Constants.TMP006_I2CADDR;
     self.sampleRate = SampleRate || tmp006Constants.TMP006_CFG_1SAMPLE;
 
-
-    self.mac = macBuffer.toString('hex');
-    self.connectionState = connectionStates.DISCONNECTED;
-    self.pollingInterval = null;
-    self.commandQueue = gatewaysCommandqueue;
-    self.gatt = null;
-    self.ccidHandle = null;
-    self.asyncGATTHandle = null;
-    self.connectionTimer = null;
-
-
     self.writeI2C = function(register, value, callback) {
         self.emit('writeI2C', self.i2cAddr, register, 16, value, callback);
     };
 
     self.readI2C = function(register, callback) {
-        self.read('readI2C', self.i2cAddr, register, 16, callback);
+        self.emit('readI2C', self.i2cAddr, register, 16, callback);
     };
 
     self.initTMP006 = function(callback) {

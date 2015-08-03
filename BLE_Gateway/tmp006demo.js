@@ -889,6 +889,8 @@ function decorateSmingFunctionality(gateway) {
 
                 theRemoteDevice.tmp006.on('writeI2C', function(i2cAddr, register, writeSize, value, callback) {
 
+                    console.log('writeI2C', i2cAddr, register, writeSize, value)
+,
                     theRemoteDevice.writeGATTAttribute('I2C_CHAR_DEVICE_ADDRESS', new Buffer([i2cAddr]), function(err, command, result) {
 
                         if (err) {
@@ -913,6 +915,7 @@ function decorateSmingFunctionality(gateway) {
                                         return callback(new VError(err, "btRemoteDevice %s write I2C_CHAR_VALUE error", theRemoteDevice.mac));
                                     }
 
+                                    console.log('writeI2C success');
                                     callback(null);
                                 });
                             });
@@ -920,7 +923,9 @@ function decorateSmingFunctionality(gateway) {
                     });
                 });
 
-                theRemoteDevice.tmp006.on('readI2C', function(i2cAddr, register, readSize, value, callback) {
+                theRemoteDevice.tmp006.on('readI2C', function(i2cAddr, register, readSize, callback) {
+
+                    console.log('readI2C', i2cAddr, register, readSize);
 
                     theRemoteDevice.writeGATTAttribute('I2C_CHAR_DEVICE_ADDRESS', new Buffer([i2cAddr]), function(err, command, result) {
 
@@ -958,21 +963,28 @@ function decorateSmingFunctionality(gateway) {
 
                 mqttClient.publish('/sming/' + theRemoteDevice.mac + '/start', 'start measuring');
 
+                theRemoteDevice.tmp006.initTMP006(function(err) {
 
-                theRemoteDevice.setPollingInterval(setInterval(function () {
+                    if (err) {
+                        return callback(new VError(err, "btRemoteDevice %s initTMP006", theRemoteDevice.mac));
+                    }
 
-                    theRemoteDevice.tmp006.readObjTempC(function (err, tempC) {
+                    theRemoteDevice.setPollingInterval(setInterval(function () {
 
-                        if (err) {
-                            return console.error(theRemoteDevice.mac, 'Error reading infrared temperature: ', err);
-                        }
+                        theRemoteDevice.tmp006.readObjTempC(function (err, tempC) {
 
-                        console.log('Device', theRemoteDevice.mac, 'read infrared temp: ', tempC);
+                            if (err) {
+                                return console.error(theRemoteDevice.mac, 'Error reading infrared temperature: ', err);
+                            }
 
-                    })
-                }, 5000));
+                            console.log('Device', theRemoteDevice.mac, 'read infrared temp: ', tempC);
 
-                callback(null, true);
+                        })
+                    }, 5000));
+
+                    callback(null, true);
+
+                });
 
 
 
