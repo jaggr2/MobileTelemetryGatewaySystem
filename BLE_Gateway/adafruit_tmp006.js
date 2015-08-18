@@ -5,7 +5,8 @@
 
 var S = require('string'),
     events = require('events'),
-    VError = require('verror');
+    VError = require('verror'),
+    math = require('mathjs');
 
 var tmp006Constants = {
 
@@ -47,11 +48,11 @@ var Adafruit_TMP006 = function(i2cAddr, SampleRate) {
     self.sampleRate = SampleRate || tmp006Constants.TMP006_CFG_1SAMPLE;
 
     self.writeI2C = function(register, value, callback) {
-        self.emit('writeI2C', self.i2cAddr, register, 16, value, callback);
+        self.emit('writeI2C', self.i2cAddr, register, 2, value, callback); // size is not needed on write
     };
 
     self.readI2C = function(register, callback) {
-        self.emit('readI2C', self.i2cAddr, register, 16, callback);
+        self.emit('readI2C', self.i2cAddr, register, 2, callback);
     };
 
     self.initTMP006 = function(callback) {
@@ -105,7 +106,7 @@ var Adafruit_TMP006 = function(i2cAddr, SampleRate) {
         self.readI2C(tmp006Constants.TMP006_TAMB, function(err, readValue) {
             if(err) return callback(new VError(err, "error while reading die temperature"));
 
-            var v = readValue/4;
+            var v = readValue.readInt16BE(0) /4;
             v *= 0.03125;
             console.log('Raw Tambient', readValue, "( ", v ," *C)");
 
@@ -120,7 +121,7 @@ var Adafruit_TMP006 = function(i2cAddr, SampleRate) {
         self.readI2C(tmp006Constants.TMP006_VOBJ, function(err, readValue) {
             if(err) return callback(new VError(err, "error while reading raw voltage"));
 
-            var v = readValue;
+            var v = readValue.readInt16BE(0);
             v *= 156.25;
             v /= 1000;
             console.log("Raw voltage ", readValue, " (", v, " uV)");
@@ -156,7 +157,7 @@ var Adafruit_TMP006 = function(i2cAddr, SampleRate) {
 
                 var fVobj = (Vobj - Vos) + tmp006Constants.TMP006_C2*(Vobj-Vos)*(Vobj-Vos);
 
-                var Tobj = sqrt(sqrt(Tdie * Tdie * Tdie * Tdie + fVobj/S));
+                var Tobj = math.sqrt(math.sqrt(Tdie * Tdie * Tdie * Tdie + fVobj/S));
 
                 Tobj -= 273.15; // Kelvin -> *C
 
