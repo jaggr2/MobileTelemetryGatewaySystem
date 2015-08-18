@@ -8,7 +8,7 @@ var S = require('string'),
     SerialPort = require("serialport").SerialPort,
     events = require('events'),
     VError = require('verror'),
-    AdafruitTMP006 = require('adafruit_tmp006');
+    AdafruitTMP006 = require('./adafruit_tmp006');
 
 var sPort = "/dev/ttyACM0";
 
