@@ -634,7 +634,7 @@ require('getmac').getMac(function(err,macAddress){
 
     macAddress = S(macAddress).replaceAll(':','').s;
 
-    console.log("DeviceID:",macAddress);
+    console.log("Connecting as DeviceID ",macAddress, " to MQTT Broker...");
 
 
     // mqtt connect
@@ -755,6 +755,22 @@ require('getmac').getMac(function(err,macAddress){
         serial.open(function(err) {
             if(err) return console.error(err);
         });
+    });
+
+    mqttClient.on('error', function(err) {
+        console.error('mqtt error: ', err);
+    });
+
+    mqttClient.on('reconnect', function() {
+        console.log('mqtt reconnected!');
+    });
+
+    mqttClient.on('offline', function() {
+        console.log('mqtt offline!');
+    });
+
+    mqttClient.on('close', function() {
+        console.log('mqtt closed!');
     });
 
 });
