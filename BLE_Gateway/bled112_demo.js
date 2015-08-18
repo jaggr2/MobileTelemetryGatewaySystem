@@ -662,12 +662,14 @@ require('getmac').getMac(function(err,macAddress){
     serial = new SerialPort(sPort, serialSettings , false); // this is the openImmediately flag [default is true]
 
     serial.on('error', function(error) {
-        console.log('Serial-Error ', error);
+        console.error('Serial-Error ', error);
+        mqttClient.publish('/sming/blueGigaDongle/connectionState', 'error on serialport: ' + error.toString());
     });
 
     serial.on('open', function () {
         console.log('opened serialport ', serial.path);
-//            client.publish('/' + deviceType + '/' + deviceID + '/' + sPort + '/open', '');
+
+        mqttClient.publish('/sming/blueGigaDongle/connectionState', 'connected via serialport ' + serial.path);
 
         serial.btDevice = new btDevice(sPort);
 
@@ -710,13 +712,14 @@ require('getmac').getMac(function(err,macAddress){
 
             console.log('closed serialport ', serial.path);
             serial.btDevice.commandQueue.quitAllCommands('serial port closed');
-            //            client.publish('/' + deviceType + '/' + deviceID + '/' + sPort + '/close', '');
+            mqttClient.publish('/sming/blueGigaDongle/connectionState', 'disconnected on serialport: ' + serial.path);
         });
 
         serial.btDevice.init(function(err) {
-            if(err) console.error("Error initialising BlueGiga: ", err);
+            if(err) return console.error("Error initialising BlueGiga: ", err);
 
             console.log("BlueGiga Device connection is ok!");
+            mqttClient.publish('/sming/blueGigaDongle/connectionState', 'Successfully received handshake from BlueGigaDongle');
             serial.emit('btDeviceInit');
         });
     });
@@ -762,7 +765,7 @@ require('getmac').getMac(function(err,macAddress){
     });
 
     mqttClient.on('reconnect', function() {
-        console.log('mqtt reconnected!');
+        console.log('mqtt try reconnecting...');
     });
 
     mqttClient.on('offline', function() {
