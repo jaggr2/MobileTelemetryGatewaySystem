@@ -1,1 +1,3 @@
-# ch.bfh.formulaStudent.telemetry
+# BLE Sming Demo
+see README.md in BLE_Gateway directory
+

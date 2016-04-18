@@ -13,7 +13,7 @@ var async = require('async');
 
 
 var siotGateway = new siot.gateway({
-  centerLicense: "DE04-9371-E53B-415C-91DD-051497D566B9"
+  centerLicense: "17A5-EF35-A307-4132-A2729BB43DD50B52"
 });
 
 var smingGyroSensor = new siot.sensor({
