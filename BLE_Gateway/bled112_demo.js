@@ -1,16 +1,28 @@
-var S = require('string'),
-    mqtt = require('mqtt'),
-    mqttrouter = require('mqtt-router'),
-    bg = require('bglib'),
-    libCommandQueue = require('commandqueue'),
-    bgCommand = libCommandQueue.bluegigaCommand,
-    commandQueue = libCommandQueue.commandQueue,
-    SerialPort = require("serialport").SerialPort,
-    events = require('events'),
-    VError = require('verror');
+var S = require('string');
+var mqtt = require('mqtt');
+var mqttrouter = require('mqtt-router');
+var bg = require('bglib');
+var libCommandQueue = require('commandqueue');
+var bgCommand = libCommandQueue.bluegigaCommand;
+var commandQueue = libCommandQueue.commandQueue;
+var SerialPort = require("serialport").SerialPort;
+var events = require('events');
+var VError = require('verror');
+var siot = require('siot.net-nodejs-api');
+var async = require('async');
+
+
+var siotGateway = new siot.gateway({
+  centerLicense: "DE04-9371-E53B-415C-91DD-051497D566B9"
+});
+
+var smingGyroSensor = new siot.sensor({
+    uuid: "sming-gyro",
+    name: "Sming Gyro Sensor",
+    valueType: "text"
+});
 
 var sPort = "/dev/ttyACM0";
-
 if(process.argv.length > 2)
 {
     sPort = process.argv[2];
@@ -625,17 +637,29 @@ btDevice.prototype.__proto__ = events.EventEmitter.prototype;
 var StartupResetDone = true;
 var globalTimer = null;
 var mqttClient = null;
+var macAddress = null;
 
-require('getmac').getMac(function(err,macAddress){
-    if (err)  {
-        console.log("unable to get MAC address");
-        return
+async.series([
+    function(done) {
+        require('getmac').getMac(function(err,firstMac) {
+            if (err)  return done(err);
+
+            macAddress = S(firstMac).replaceAll(':', '').s;
+
+            console.log("Connecting as DeviceID ", macAddress, " to MQTT Broker...");
+
+            done();
+        });
+    },
+    function(done) {
+        siotGateway.registerDevice(smingGyroSensor, done)
+    },
+    function(done) {
+        siotGateway.connect(done);
     }
-
-    macAddress = S(macAddress).replaceAll(':','').s;
-
-    console.log("Connecting as DeviceID ",macAddress, " to MQTT Broker...");
-
+], function(err) {
+    if(err) return console.error(err);
+    
 
     // mqtt connect
     mqttClient = mqtt.connect('mqtt://web:1234@formula.xrj.ch');
@@ -885,6 +909,7 @@ function decorateSmingFunctionality(gateway) {
                             theRemoteDevice.measuredCount += 1;
                         }
 
+                        smingGyroSensor.sendSensorData(sample);
                         mqttClient.publish('/sming/measurement', JSON.stringify(sample));
 
                         var fs = require('fs');
@@ -1080,7 +1105,7 @@ function decorateSmingFunctionality(gateway) {
 function exitHandler(options, err) {
     if (options.cleanup) {
         console.log('cleanup');
-        if(serial.btDevice) serial.btDevice.disconnectAll();
+        if(serial && serial.btDevice) serial.btDevice.disconnectAll();
     }
     if (err) console.log(err.stack);
     if (options.exit) process.exit();
