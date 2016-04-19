@@ -13,14 +13,16 @@ var async = require('async');
 
 
 var siotGateway = new siot.gateway({
-  centerLicense: "17A5-EF35-A307-4132-A2729BB43DD50B52"
+  centerLicense: "DE04-9371-E53B-415C-91DD-051497D566B9"
 });
 
+/*
 var smingGyroSensor = new siot.sensor({
     uuid: "sming-gyro",
     name: "Sming Gyro Sensor",
     valueType: "text"
 });
+*/
 
 var sPort = "/dev/ttyACM0";
 if(process.argv.length > 2)
@@ -652,9 +654,6 @@ async.series([
         });
     },
     function(done) {
-        siotGateway.registerDevice(smingGyroSensor, done)
-    },
-    function(done) {
         siotGateway.connect(done);
     }
 ], function(err) {
@@ -826,6 +825,19 @@ function decorateSmingFunctionality(gateway) {
             mqttClient.publish('/sming/found', newRemoteDevice.mac + " " + newRemoteDevice.lastRssi);
 
 
+            if(!newRemoteDevice.siotTempSensor) {
+                newRemoteDevice.siotTempSensor = new siot.sensor({
+                    uuid: "sming-temp-" + newRemoteDevice.mac.toString(),
+                    name: "Sming (" + newRemoteDevice.mac.toString() + ")  Temperature Sensor",
+                    valueType: "float"
+                });
+
+                siotGateway.registerDevice(newRemoteDevice.siotTempSensor, function(err) {
+                    if(err) newRemoteDevice.siotTempSensor = null;
+                })
+            }
+
+
             newRemoteDevice.on('connectionStateChange', function(err, newState) {
 
                 var theRemoteDevice = newRemoteDevice;
@@ -909,15 +921,16 @@ function decorateSmingFunctionality(gateway) {
                             theRemoteDevice.measuredCount += 1;
                         }
 
-                        smingGyroSensor.sendSensorData(sample);
+                        //smingGyroSensor.sendSensorData(sample);
                         mqttClient.publish('/sming/measurement', JSON.stringify(sample));
 
+                        /*
                         var fs = require('fs');
                         fs.appendFile("data.txt", theRemoteDevice.mac + "," + (new Date()).getTime() + "," + sample.point[0] + "," + sample.point[1] + "," + sample.point[2] + "\n", function (err) {
                             if (err) {
                                 return console.log(err);
                             }
-                        });
+                        }); */
                         //samples.push(sample);
                     }
                 }
@@ -1014,7 +1027,12 @@ function decorateSmingFunctionality(gateway) {
                                                     }
 
                                                     if (result && result.readData && result.readData.value && result.readData.value.length == 1) {
+
+
                                                         console.log('Device', theRemoteDevice.mac, 'read temp: ', result.readData.value.readInt8(0));
+
+                                                        theRemoteDevice.siotTempSensor.sendRawData(result.readData.value.readInt8(0));
+
                                                         mqttClient.publish('/sming/' + theRemoteDevice.mac + '/temp', result.readData.value.readInt8(0).toString());
                                                     }
 
