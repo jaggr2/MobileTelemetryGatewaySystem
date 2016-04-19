@@ -661,7 +661,7 @@ async.series([
     
 
     // mqtt connect
-    mqttClient = mqtt.connect('mqtt://web:1234@formula.xrj.ch');
+    mqttClient = mqtt.connect('mqtt://web:1234@mqtt.xrj.ch');
 
     // enable the subscription router
     var router = mqttrouter.wrap(mqttClient);
